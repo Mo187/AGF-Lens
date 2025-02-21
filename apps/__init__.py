@@ -94,6 +94,7 @@ def create_app(config):
     app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
     app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
     app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER')
+    app.config['MAIL_DEFAULT_SENDER'] = ['tiffany.tirop@africanguaranteefund.com','intern.it@africanguaranteefund.com','job.chumo@africanguaranteefund.com','stephen.kibuci@africanguaranteefund.com']
     app.config.from_object(config)
     # app.config('CACHE_TYPE') = 'SimpleCache'  # Use 'RedisCache' for production
     # app.config('CACHE_DEFAULT_TIMEOUT') = 300  # Cache timeout in seconds (adjust as needed)

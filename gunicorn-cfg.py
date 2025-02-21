@@ -1,8 +1,6 @@
 import os
 
-# Use the PORT environment variable if set; otherwise, default to 5555
-port = os.environ.get("PORT", "5555")
-bind = f"0.0.0.0:{port}"
+bind = f"0.0.0.0:{os.environ.get('PORT', '8080')}"
 workers = 1
 accesslog = '-'
 loglevel = 'debug'
