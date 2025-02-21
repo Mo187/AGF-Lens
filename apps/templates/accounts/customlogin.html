@@ -1,0 +1,79 @@
+{% extends "layouts/base-fullscreen.html" %}
+
+{% block title %} Login {% endblock %}
+
+{% block content %}
+<div id='stars3'></div>
+<div id='stars'></div>
+
+<div class="auth-wrapper">
+
+    <div class="auth-content">
+        
+        <div class="auth-bg">
+            <span class="r"></span>
+            <span class="r s"></span>
+            <span class="r s"></span>
+            <span class="r"></span>
+            
+        </div>
+
+        <!-- Card with white pulse effect -->
+        <div class="card pulse-border custom-rounded" style="background-color: #0c1f5e8f">
+            <div class="card-body text-center ">
+
+                <!-- Logo Section -->
+                <div class="flex justify-center mb-4">
+                    <img src="/static/assets/img/agfwhite.png" alt="Logo" class="img-fluid" style="max-width: 300px;" />
+                </div>
+                <!-- End Logo Section -->
+
+                <h1 class="mb-4 text-lg" style="color: rgb(255, 255, 255); font-size:27px;">Lens Portal</h1>
+
+                <span class="mb-0 text-muted">
+                    {% if msg %}
+                    <span class="text-danger">{{ msg | safe }}</span>
+                    {% else %}
+
+                    {% endif %}
+                </span>
+
+                <form role="form" method="post" action="">
+
+                    {{ form.hidden_tag() }}
+
+                    <!-- Modern input group styling -->
+                    <div class="input-group mb-3 input-group-modern">
+                        {{ form.email(placeholder="Email Address", class="form-control") }}
+                    </div>
+
+                    <div class="input-group mb-4 input-group-modern">
+                        {{ form.password(placeholder="Password", class="form-control", type="password") }}
+                    </div>
+
+                    <!-- Tailwind Scoped Container -->
+                    <button
+                        class="overflow-hidden relative w-32 p-2 h-12 bg-dark-gradient text-white border-none rounded-md text-lg font-bold cursor-pointer relative z-10 group shadow-sm"
+                        type="submit" name="login" style="background-color: rgba(2, 6, 24, 0.788);">
+                        Login
+                        <span
+                            class="absolute w-36 h-32 -top-8 -left-2 bg-white rotate-12 transform scale-x-0 group-hover:scale-x-100 transition-transform group-hover:duration-500 duration-1000 origin-left"></span>
+                        <span
+                            class="absolute w-36 h-32 -top-8 -left-2 bg-blue-500 rotate-12 transform scale-x-0 group-hover:scale-x-100 transition-transform group-hover:duration-700 duration-700 origin-left"></span>
+                        <span
+                            class="absolute w-36 h-32 -top-8 -left-2 bg-blue-800 rotate-12 transform scale-x-0 group-hover:scale-x-50 transition-transform group-hover:duration-1000 duration-500 origin-left"></span>
+                        <span
+                            class="group-hover:opacity-100 group-hover:duration-1000 duration-100 opacity-0 absolute top-2.5 left-6 z-10">Welcome!</span>
+                    </button>
+
+                </form>
+                <br>
+                <p class="mb-0" style="color: rgb(161, 161, 165);">Don’t have an account?
+                    <a href="{{ url_for('authentication_blueprint.register') }}" style="color: rgb(156, 154, 158);" >request access.</a></p>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock content %}

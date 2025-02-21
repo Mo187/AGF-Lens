@@ -1,0 +1,107 @@
+
+	.chart-container {
+		position: relative;
+		margin: auto;
+		height: 50vh;
+		width: 80vw;
+		margin-bottom: 2rem;
+	}
+	.company-risk-score, .impact-score {
+		text-align: center;
+	}
+	.risk-score-value {
+		font-size: 2rem;
+		font-weight: bold;
+	}
+	.impact-legend {
+		text-align: center;
+		margin: 10px 0;
+	}
+	.legend-item {
+		display: inline-block;
+		margin-right: 10px;
+	}
+	.legend-color {
+		width: 20px;
+		height: 20px;
+		display: inline-block;
+		margin-right: 5px;
+	}
+	.low {
+		background-color: yellow;
+	}
+	.medium {
+		background-color: orange;
+	}
+	.high {
+		background-color: red;
+	}
+
+	
+	.card:hover {
+		box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+		transform: scale(1.02);
+		transition: all 0.3s ease-in-out;
+	}
+	.card-body {
+		padding: 20px;
+		text-align: center;
+		transition: background-color 0.3s ease-in-out;
+	}
+	.card:hover .card-body {
+		background-color: #5393d4;
+	}
+	.card-title {
+		font-weight: bold;
+	}
+	.card-text {
+		font-size: 0.95rem;
+	}
+
+	.modal-header {
+            background: linear-gradient(135deg, #6e8efb, #a777e3);
+            color: white;
+        }
+
+		.gradient-border-1 {
+            border-image: linear-gradient(45deg, #FF9F40, #FF9F40) 1;
+        }
+        .gradient-border-2 {
+            border-image: linear-gradient(45deg, grey, grey) 1;
+        }
+        .gradient-border-3 {
+            border-image: linear-gradient(45deg, #9966FF, #9966FF) 1;
+        }
+        .gradient-border-4 {
+            border-image: linear-gradient(45deg, #FF6384, #FF6384) 1;
+        }
+        .gradient-border-5 {
+            border-image: linear-gradient(45deg, #36A2EB, #36A2EB) 1;
+        }
+        .gradient-border-6 {
+            border-image: linear-gradient(45deg, #4BC0C0, #4BC0C0) 1;
+        }
+        .gradient-btn-1 {
+            background: linear-gradient(45deg, #FF9F40, #FF9F40);
+            border: none;
+        }
+        .gradient-btn-2 {
+            background: linear-gradient(45deg, grey, grey);
+            border: none;
+        }
+        .gradient-btn-3 {
+            background: linear-gradient(45deg, #9966FF, #9966FF);
+            border: none;
+        }
+        .gradient-btn-4 {
+            background: linear-gradient(45deg, #FF6384, #FF6384);
+            border: none;
+        }
+        .gradient-btn-5 {
+            background: linear-gradient(45deg, #36A2EB, #36A2EB);
+            border: none;
+        }
+        .gradient-btn-6 {
+            background: linear-gradient(45deg, #4BC0C0, #4BC0C0);
+            border: none;
+        }

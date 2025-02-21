@@ -1,0 +1,434 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} Dashboard {% endblock %} 
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}
+<link rel="stylesheet" href="/static/assets/css/stars.css">
+
+{% endblock stylesheets %}
+
+{% block content %}
+
+<div id="preloader">
+    <div id="loader"></div>
+  </div>
+
+<div class="content" style="background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);">
+
+<div id="stars"></div>
+
+<br>
+    <div class="container">
+        <div class="page-header">
+            <h4 class="page-title" style="color: white;">ICT Dashboard</h4>
+            <ul class="breadcrumbs">
+                <li class="nav-home">
+                    <a href="/index">
+                        <i class="flaticon-home"></i>
+                    </a>
+                </li>
+                
+                <li class="separator">
+                    <i class="flaticon-right-arrow"></i>
+                </li>
+                <li class="nav-item">
+                    <a href="/ict-ims.html">Inventory Management</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+    
+    
+        <div class="panel-header shadow-lg rounded" style="background: linear-gradient(135deg, #272727, #b715408e);">
+            <div class="page-inner py-5">
+                <div class="d-flex align-items-left align-items-md-center flex-column flex-md-row">
+                    <div>
+                        <h2 class="text-white pb-2 fw-bold" style="font-size: 42px;">IIMS</h2>
+                        <h5 class="text-white op-7 mb-2" style="font-size: 18px;">Inventory Management for African Guarantee Fund's ICT Department</h5>
+                    </div>
+                    <div class="ml-md-auto py-2 py-md-0">
+                        <a href="#" class="btn btn-white btn-border btn-round mr-2">Export CSV</a>
+                    </div>
+                </div>
+            </div>
+            <br>
+        </div>
+    
+    
+    <div class="container">
+     
+        
+        <br><br>
+    
+        <div class="row">
+            <div class="col-sm-5 col-lg-6">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="icon icon-primary icon-lg">
+                                <i class="fas fa-tv"></i>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="mb-0" style="color: white;">Number of assigned monitors:</h3>
+                                <br>
+                                <h4 class="mb-0" style="color: aquamarine;">50</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-5 col-lg-6">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="icon icon-primary icon-lg">
+                                <i class="fa fa-exclamation-triangle"></i>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="mb-0" style="color: white;">Workstations missing #Serial Numbers:</h3>
+                                <br>
+                                <h4 class="mb-0" style="color: burlywood;">{{ missing_serial_count }}</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-5 col-lg-6">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="icon icon-primary icon-lg">
+                                <i class="fa fa-laptop"></i>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="mb-0" style="color: white;">Allocated workstations at AGF:</h3>
+                                <br>
+                                <h4 class="mb-0" style="color: aquamarine;">{{ total_workstations_count }}</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-sm-5 col-lg-6">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="icon icon-primary icon-lg">
+                                <i class="fa fa-laptop"></i>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="mb-0" style="color: white;">Total Number of Phone Extension lines:</h3>
+                                <br>
+                                <h4 class="mb-0" style="color: aquamarine;">80</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+
+        </div>
+    
+    
+    
+        <div class="col-md-12">
+            <div class="card bg-dark-gradient" style="color: antiquewhite;">
+                <div class="card-header">
+                    <div class="d-flex align-items-center">
+                        <h4 class="card-title">Workstation/Laptops Inventory</h4>
+                        <button class="btn btn-danger btn-round ml-auto bg-dark-gradient" data-toggle="modal" data-target="#addRowModal">
+                            <i class="fa fa-plus"></i>
+                            Add
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Add Modal -->
+                    <div class="modal fade" id="addRowModal" tabindex="-1" role="dialog" aria-hidden="true">
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header no-bd bg-info-gradient">
+                                    <h5 class="modal-title">
+                                        <span class="fw-mediumbold">Assign Workstation to AGF Employee</span> 
+                                        <span class="fw-light"></span>
+                                    </h5>
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+                                <div class="modal-body bg-dark-gradient">
+                                    <p class="small">Create a new row using this form, make sure you fill them all.</p>
+                                    <form action="{{ url_for('authentication_blueprint.add_inventory') }}" method="POST">
+                                        <div class="row">
+                                            <div class="col-sm-12">
+                                                <div class="form-group form-group-default">
+                                                    <label>Employee Name</label>
+                                                    <input name="employee_name" type="text" class="form-control" placeholder="" required>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6 pr-0">
+                                                <div class="form-group form-group-default">
+                                                    <label>Laptop Model</label>
+                                                    <input name="laptop_model" type="text" class="form-control" placeholder="" required>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-group form-group-default">
+                                                    <label>Serial</label>
+                                                    <input name="serial_number" type="text" class="form-control" placeholder="" required>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-group form-group-default">
+                                                    <label>Department</label>
+                                                    <input name="department" type="text" class="form-control" placeholder="" required>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer no-bd">
+                                            <button type="submit" class="btn btn-primary">Add</button>
+                                            <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+    
+                    <div class="table-responsive">
+                        <table id="add-row" class="display table table-striped-bg-default table-hover table-head">
+                            <thead style="background: linear-gradient(135deg, #3a3939, #b715408e);">
+                                <tr>
+                                    <th>Employee Name</th>
+                                    <th>Laptop Model</th>
+                                    <th>Serial #</th>
+                                    <th>Department</th>
+                                    <th style="width: 10%">Action</th>
+                                </tr>
+                            </thead>
+                            <tfoot style="background: linear-gradient(135deg, #000000, #b71540);">
+                                <tr>
+                                    <th>Employee Name</th>
+                                    <th>Laptop Model</th>
+                                    <th>Serial #</th>
+                                    <th>Department</th>
+                                    <th>Action</th>
+                                </tr>
+                            </tfoot>
+                            <tbody>
+                                {% for inventory in inventories %}
+                                <tr>
+                                    <td>{{ inventory.employee_name }}</td>
+                                    <td>{{ inventory.laptop_model }}</td>
+                                    <td>{{ inventory.serial_number }}</td>
+                                    <td>{{ inventory.department }}</td>
+                                    <td>
+                                        <div class="form-button-action">
+                                            <!-- Edit Button -->
+                                            <button type="button" data-toggle="modal" data-target="#editRowModal{{ inventory.id }}" class="btn btn-link btn-primary btn-lg">
+                                                <i class="fa fa-edit"></i>
+                                            </button>
+                                            <!-- Delete Button -->
+                                            <form id="delete-form-{{ inventory.id }}" action="{{ url_for('authentication_blueprint.delete_inventory', id=inventory.id) }}" method="POST" style="display:inline;">
+                                                <button type="button" class=" btn btn-outline-danger delete-button" data-id="{{ inventory.id }}">
+                                                    <i class="fa fa-times"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <!-- Edit Modal -->
+                                <div class="modal fade" id="editRowModal{{ inventory.id }}" tabindex="-1" role="dialog" aria-hidden="true">
+                                    <div class="modal-dialog" role="document">
+                                        <div class="modal-content">
+                                            <div class="modal-header no-bd bg-warning-gradient">
+                                                <h5 class="modal-title">
+                                                    <span class="fw-mediumbold">Edit</span>
+                                                    <span class="fw-light">Row</span>
+                                                </h5>
+                                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                    <span aria-hidden="true">&times;</span>
+                                                </button>
+                                            </div>
+                                            <div class="modal-body bg-dark-gradient">
+                                                <p class="small">Edit this row using this form, make sure you fill them all</p>
+                                                <form action="{{ url_for('authentication_blueprint.edit_inventory', id=inventory.id) }}" method="POST">
+                                                    <div class="row">
+                                                        <div class="col-sm-12">
+                                                            <div class="form-group form-group-default">
+                                                                <label>Employee Name</label>
+                                                                <input name="employee_name" type="text" class="form-control" value="{{ inventory.employee_name }}" required>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-6 pr-0">
+                                                            <div class="form-group form-group-default">
+                                                                <label>Laptop Model</label>
+                                                                <input name="laptop_model" type="text" class="form-control" value="{{ inventory.laptop_model }}" required>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <div class="form-group form-group-default">
+                                                                <label>Serial</label>
+                                                                <input name="serial_number" type="text" class="form-control" value="{{ inventory.serial_number }}" required>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <div class="form-group form-group-default">
+                                                                <label>Department</label>
+                                                                <input name="department" type="text" class="form-control" value="{{ inventory.department }}" required>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer no-bd">
+                                                        <button type="submit" class="btn btn-primary">Save</button>
+                                                        <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>   
+
+
+
+</div>
+
+
+
+
+
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+
+
+<script>
+	$(document).ready(function() {
+		$('#basic-datatables').DataTable({
+		});
+
+		$('#multi-filter-select').DataTable( {
+			"pageLength": 5,
+			initComplete: function () {
+				this.api().columns().every( function () {
+					var column = this;
+					var select = $('<select class="form-control"><option value=""></option></select>')
+					.appendTo( $(column.footer()).empty() )
+					.on( 'change', function () {
+						var val = $.fn.dataTable.util.escapeRegex(
+							$(this).val()
+							);
+
+						column
+						.search( val ? '^'+val+'$' : '', true, false )
+						.draw();
+					} );
+
+					column.data().unique().sort().each( function ( d, j ) {
+						select.append( '<option value="'+d+'">'+d+'</option>' )
+					} );
+				} );
+			}
+		});
+
+		// Add Row
+		$('#add-row').DataTable({
+            "pageLength": 5,
+        });
+
+        $('#addRowButton').click(function() {
+            var action = '<td> <div class="form-button-action"> <button type="button" data-toggle="modal" data-target="#editRowModal" class="btn btn-link btn-primary btn-lg"> <i class="fa fa-edit"></i> </button> <form action="#" method="POST" style="display:inline;"> <button type="submit" class="btn btn-link btn-danger"> <i class="fa fa-times"></i> </button> </form> </div> </td>';
+            $('#add-row').dataTable().fnAddData([
+                $("#addName").val(),
+                $("#addLaptop").val(),
+                $("#addSerial").val(),
+                $("#addDepartment").val(),
+                action
+            ]);
+            $('#addRowModal').modal('hide');
+        });
+    });
+</script>
+
+<script>
+    
+    var SweetAlert2Demo = function() {
+    var initDemos = function() {
+
+        // Event delegation to handle click events for dynamically generated buttons
+        $(document).on('click', '.delete-button', function(e) {
+            e.preventDefault(); // Prevent the default button action
+
+            var inventoryId = $(this).data('id'); // Get the inventory ID from the button's data-id attribute
+
+            swal({
+                title: 'Are you sure?',
+                text: "You won't be able to revert this!",
+                icon: 'warning',
+                buttons:{
+                    confirm: {
+                        text : 'Yes, delete it!',
+                        className : 'btn btn-success'
+                    },
+                    cancel: {
+                        visible: true,
+                        text : 'No, cancel!',
+                        className: 'btn btn-danger'
+                    }
+                }
+            }).then((willDelete) => {
+                if (willDelete) {
+                    // Find the form and submit it
+                    $('#delete-form-' + inventoryId).submit();
+
+                    swal({
+                        title: 'Deleted!',
+                        text: 'Your file has been deleted.',
+                        icon: 'success',
+                        buttons : {
+                            confirm: {
+                                className : 'btn btn-success'
+                            }
+                        }
+                    });
+                } else {
+                    swal.close();
+                }
+            });
+        });
+
+    };
+
+    return {
+        //== Init
+        init: function() {
+            initDemos();
+        },
+    };
+}();
+
+//== Class Initialization
+jQuery(document).ready(function() {
+SweetAlert2Demo.init();
+});
+</script>
+
+<!-- preloader -->
+<script>
+	$(window).on("load",function(){
+	  $("#preloader").fadeOut(1000);
+	});
+</script>
+{% endblock javascripts %}

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>
+        AGF Analytics Dashboard - {% block title %}{% endblock %} | African Guarantee Fund
+    </title>
+    </title>
+    <!-- HTML5 Shim and Respond.js IE10 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 10]>
+		<script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+		<script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+		<![endif]-->
+    <!-- Meta -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+
+    <script src="/static/assets/js/tailwind.js"></script>
+
+
+    <!-- <link rel="stylesheet" href="/static/assets/css/login/animate.min.css"> -->
+    <link rel="stylesheet" href="/static/assets/css/login_custom.css">
+    <!-- <link rel="stylesheet" href="/static/assets/css/login/dark.css"> -->
+    <link rel="stylesheet" href="/static/assets/css/login/bootstrap-login.min.css">
+
+    <link rel="stylesheet" href="/static/assets/css/stars.css">
+
+    
+   
+    <!-- Specific CSS goes HERE -->
+    {% block stylesheets %}
+
+    <style>
+        /* White pulse border effect for the card */
+.pulse-border {
+    border: 1px solid transparent;
+    animation: pulse 3s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        border-color: rgba(255, 255, 255, 0);
+        box-shadow: 0 0 7px rgba(255, 255, 255, 0.2);
+    }
+    50% {
+        border-color: rgba(255, 255, 255, 0);
+        box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    }
+    100% {
+        border-color: rgba(255, 255, 255, 0);
+        box-shadow: 0 0 7px rgba(255, 255, 255, 0.2);
+    }
+}
+
+/* Modern input group styling */
+.input-group-modern .form-control {
+    background-color: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: white;
+    border-radius: 0.375rem;
+    padding: 0.75rem 1rem;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.input-group-modern .form-control:focus {
+    background-color: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.3);
+    box-shadow: none;
+}
+/* Optional: Custom large rounding for the card */
+.card.custom-rounded {
+    border-radius: 0.5rem !important; /* Increase the radius for more rounding */
+}
+
+    </style>
+    {% endblock stylesheets %}
+
+</head>
+
+<body style="background-color: #010714 ">
+
+    {% block content %}{% endblock content %}
+
+
+    {% include 'includes/scripts.html' %}
+
+    <!-- Specific Page JS goes HERE  -->
+    {% block javascripts %}
+<!-- <script src="/static/assets/js/vendor-all.min.js"></script>
+<script src="/static/assets/js/bootstrap.min.js"></script>
+<script src="/static/assets/js/pcoded.min.js"></script>
+<script src="/static/assets/js/dark-mode.js"></script>
+<script src="/static/assets/js/scrolling.min.js"></script> -->
+
+
+    {% endblock javascripts %}    
+
+</body>
+</html>

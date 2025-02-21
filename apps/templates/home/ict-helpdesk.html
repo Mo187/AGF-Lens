@@ -1,0 +1,281 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} Dashboard {% endblock %}
+
+{% block stylesheets %}
+<link rel="stylesheet" href="/static/assets/css/stars.css">
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+
+<style>
+   
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+
+    @keyframes pulse {
+        0% { opacity: 0.6; }
+        50% { opacity: 1; }
+        100% { opacity: 0.6; }
+    }
+
+</style>
+<style>
+    #ticketStatusChart {
+        min-height: 600px !important;  /* Made much bigger */
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 600px !important;  /* Made much bigger */
+        width: 100%;
+        margin: auto;
+    }
+    
+    /* Force white text in chart legend */
+    #ticketStatusChart canvas + div ul li span {
+        color: #ffffff !important;
+    }
+    </style>
+{% endblock stylesheets %}
+
+{% block content %}
+<div class="content">
+    <div id="preloader">
+        <div id="loader"></div>
+    </div>
+    <br>
+
+    <!-- General Stats Section -->
+    <div class="row">
+        <!-- Unresolved Tickets -->
+        <div class="col-md-4">
+            <div class="card card-stats card-round loading">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-5">
+                            <div class="icon-big text-center">
+                                <i class="fa fa-exclamation-circle text-warning"></i>
+                            </div>
+                        </div>
+                        <div class="col-7 col-stats">
+                            <div class="numbers">
+                                <p class="card-category" style="color: white;">Unresolved Tickets</p>
+                                <h4 class="card-title" style="color: #F97F51;" id="total-unresolved">...</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- On Hold Tickets -->
+        <div class="col-md-4">
+            <div class="card card-stats card-round loading">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-5">
+                            <div class="icon-big text-center">
+                                <i class="fa fa-pause-circle text-info"></i>
+                            </div>
+                        </div>
+                        <div class="col-7 col-stats">
+                            <div class="numbers">
+                                <p class="card-category" style="color: white;">On Hold Tickets</p>
+                                <h4 class="card-title" style="color:#1B9CFC;" id="total-on-hold">...</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Open Tickets -->
+        <div class="col-md-4">
+            <div class="card card-stats card-round loading">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-5">
+                            <div class="icon-big text-center">
+                                <i class="fa fa-folder-open text-secondary"></i>
+                            </div>
+                        </div>
+                        <div class="col-7 col-stats">
+                            <div class="numbers">
+                                <p class="card-category" style="color: white;">Open Tickets</p>
+                                <h4 class="card-title" style="color: rgb(160, 77, 255);" id="total-open">...</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Average Resolution Time Card -->
+        <div class="col-md-4">
+            <div class="card card-stats card-round loading">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-5">
+                            <div class="icon-big text-center">
+                                <i class="fa fa-clock text-primary"></i>
+                            </div>
+                        </div>
+                        <div class="col-7 col-stats">
+                            <div class="numbers">
+                                <p class="card-category" style="color: white;">Avg Resolution Time</p>
+                                <h4 class="card-title" style="color: rgb(255, 229, 213);" id="avg-resolution-time">...</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Chart -->
+        <div style="max-width: 500px; margin: auto;">
+            <!-- <div class="card-title content-center">Tickets in the last 30 days</div> -->
+            <br>
+            <div class="chart-container">
+                <div class="loading-overlay" id="status-chart-loader">
+                    <div class="loading-spinner"></div>
+                </div>
+                <canvas id="ticketStatusChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <br><br><br>
+
+    <!-- Volume Chart -->
+    <div class="container-fluid">
+        <div class="chart-container">
+            <div class="loading-overlay" id="volume-chart-loader">
+                <div class="loading-spinner"></div>
+            </div>
+            <canvas id="ticketVolumeChart"></canvas>
+        </div>
+    </div>
+
+    <br><br>
+
+    <div class="row">
+        <!-- Activity Section -->
+        <div class="col-md-8">
+            <div class="card full-height">
+                <div class="card-header">
+                    <div class="card-title">Recent Activities</div>
+                </div>
+                <div class="card-body" id="recent-activities">
+                    <div class="loading-overlay">
+                        <div class="loading-spinner"></div>
+                    </div>
+                    <ol class="activity-feed" style="color: rgb(228, 143, 137);">
+                        <!-- Activities will be loaded here -->
+                    </ol>
+                </div>
+            </div>
+        </div>
+
+        <!-- IT Support Agents Section -->
+        <div class="col-md-4">
+            <div class="card card-round">
+                <div class="card-body">
+                    <div class="card-title fw-mediumbold">Active IT Support Agents</div>
+                    <div class="card-list" id="agent-list">
+                        <div class="loading-overlay">
+                            <div class="loading-spinner"></div>
+                        </div>
+                        <!-- Agents will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block javascripts %}
+<!-- Add moment.js for chart date handling -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment"></script>
+
+<script>
+    // Template for ticket activity item
+    function createTicketActivityHTML(ticket) {
+        return `
+            <li class="feed-item feed-item-secondary" style="color: rgb(212, 205, 206);">
+                <time class="date" datetime="${ticket.created_at}">${ticket.created_at}</time>
+                <div class="text" style="color: white;">
+                    Ticket #${ticket.id} <a href="#">${ticket.subject}</a> is 
+                    <span class="badge ${getStatusBadgeClass(ticket.status)}">${ticket.status}</span>
+                </div>
+                <div class="text">
+                    <strong style="color:#9dbdf8;">Opened By: </strong> ${ticket.requester}
+                </div>
+                <div class="text">
+                    <strong style="color: rgb(67, 160, 116);">Assigned To: </strong> ${ticket.agent}
+                </div>
+            </li>
+        `;
+    }
+
+    // Template for agent item
+    function createAgentHTML(name) {
+        return `
+            <div class="item-list">
+                <div class="avatar">
+                    <img src="/static/assets/img/anya.png" alt="..." class="avatar-img rounded-circle">
+                </div>
+                <div class="info-user ml-3">
+                    <div class="username">${name}</div>
+                    <div class="status">IT Support Agent</div>
+                </div>
+                <button class="btn btn-icon btn-primary btn-round btn-xs">
+                    <i class="fa fa-plus"></i>
+                </button>
+            </div>
+        `;
+    }
+
+    // Helper function for badge classes
+    function getStatusBadgeClass(status) {
+        switch(status) {
+            case 'Open': return 'badge-secondary';
+            case 'Pending': return 'badge-success';
+            case 'Resolved': return 'badge-info';
+            case 'Closed': return 'badge-success';
+            default: return 'badge-dark';
+        }
+    }
+
+    // Update recent tickets
+    function updateRecentTickets(tickets) {
+        const activityFeed = document.querySelector('.activity-feed');
+        activityFeed.innerHTML = tickets.map(createTicketActivityHTML).join('');
+        document.querySelector('#recent-activities .loading-overlay').style.display = 'none';
+    }
+
+    // Update agent list
+    function updateAgentList(agents) {
+        const agentList = document.getElementById('agent-list');
+        agentList.innerHTML = agents.map(createAgentHTML).join('');
+        document.querySelector('#agent-list .loading-overlay').style.display = 'none';
+    }
+
+    // Remove loading state from stats cards
+    function removeLoadingState() {
+        document.querySelectorAll('.card-stats.loading').forEach(card => {
+            card.classList.remove('loading');
+        });
+    }
+</script>
+
+<!-- Include the optimized chart initialization code here -->
+ <!-- Required libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment"></script>
+<script src="{{ url_for('static', filename='assets/js/helpdesk-chart.js') }}"></script>
+{% endblock javascripts %}

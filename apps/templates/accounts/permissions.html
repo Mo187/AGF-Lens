@@ -1,0 +1,120 @@
+<!-- manage_permissions.html -->
+{% extends "layouts/base.html" %}
+
+{% block stylesheets %}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<style>
+    .user-permissions-card {
+        margin-bottom: 1rem;
+        background: #1a2035;
+        border: 1px solid #2f374b;
+    }
+    .user-info {
+        padding: 1rem;
+        border-bottom: 1px solid #2f374b;
+    }
+    .permissions-section {
+        padding: 1rem;
+    }
+    .select2-container--default .select2-selection--multiple {
+        background-color: #1a2035;
+        border: 1px solid #2f374b;
+    }
+    .select2-container--default .select2-selection--multiple .select2-selection__choice {
+        background-color: #1572e8;
+        border: none;
+        color: white;
+    }
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+<div class="page-inner">
+    <div class="page-header">
+        <h4 class="page-title">Manage User Permissions</h4>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <form method="get" id="userSelectForm">
+                                <div class="form-group">
+                                    <label>Select User</label>
+                                    <select name="user_id" class="form-control select2" onchange="this.form.submit()">
+                                        <option value="">Choose a user...</option>
+                                        {% for user in users %}
+                                        <option value="{{ user.id }}" {% if selected_user and selected_user.id == user.id %}selected{% endif %}>
+                                            {{ user.username }} ({{ user.email }})
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    {% if selected_user %}
+                    <div class="row mt-4">
+                        <div class="col-md-12">
+                            <div class="card user-permissions-card">
+                                <div class="card-body">
+                                    <h5>Editing permissions for: {{ selected_user.username }}</h5>
+                                    <p class="text-muted">{{ selected_user.email }}</p>
+                                    <p class="text-muted">Department: {{ selected_user.department.name if selected_user.department else 'None' }}</p>
+                                    
+                                    <form method="post" class="mt-4">
+                                        <input type="hidden" name="user_id" value="{{ selected_user.id }}">
+                                        <div class="form-group">
+                                            <label>Permissions</label>
+                                            <select name="permissions" class="form-control select2-multiple" multiple="multiple">
+                                                {% for permission in permissions %}
+                                                <option value="{{ permission.id }}" 
+                                                        {% if permission in selected_user.permissions %}selected{% endif %}>
+                                                    {{ permission.description }}
+                                                </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary mt-3">Update Permissions</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block javascripts %}
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+$(document).ready(function() {
+    $('.select2').select2({
+        theme: "classic",
+        placeholder: "Select a user",
+        allowClear: true
+    });
+    
+    $('.select2-multiple').select2({
+        theme: "classic",
+        placeholder: "Select permissions",
+        allowClear: true
+    });
+});
+</script>
+{% endblock javascripts %}

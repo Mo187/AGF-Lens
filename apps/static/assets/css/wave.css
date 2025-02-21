@@ -1,0 +1,56 @@
+
+  /* -------- Wave Background Styles -------- */
+  .content {
+    position: relative;
+  }
+  /* The wave background – positioned absolutely inside .content */
+  .wave-section {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    z-index: 0;
+    background: #002358;
+    filter: brightness(1.4);
+}
+.wave-section .air {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 120px; /* Reduced height */
+    background: url("/static/assets/img/wave.png");
+
+    background-size: 1000px 120px; /* Match the new height */
+  }
+  .wave-section .air.air1 {
+    animation: wave 30s linear infinite;
+    z-index: 1000;
+    opacity: 1;
+    animation-delay: 0s;
+    bottom: 0;
+  }
+  .wave-section .air.air2 {
+    animation: wave2 15s linear infinite;
+    z-index: 999;
+    opacity: 0.5;
+    animation-delay: -5s;
+    bottom: 12px; /* Adjusted for smaller wave height */
+  }
+  .wave-section .air.air3 {
+    animation: wave 30s linear infinite;
+    z-index: 998;
+    opacity: 0.2;
+    animation-delay: -2s;
+    bottom: 19px; /* Adjusted for smaller wave height */
+  }
+  .wave-section .air.air4 {
+    animation: wave2 5s linear infinite;
+    z-index: 997;
+    opacity: 0.7;
+    animation-delay: -5s;
+    bottom: 22px; /* Adjusted for smaller wave height */
+  }
+  

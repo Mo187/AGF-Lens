@@ -1,0 +1,75 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} Dashboard {% endblock %} 
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}
+<link rel="stylesheet" href="/static/assets/css/stars.css">
+
+<style>
+	iframe {
+		width: 100%;
+		height: 700px;
+		border: none;
+	}
+</style>
+
+{% endblock stylesheets %}
+
+{% block content %}
+
+<br><br><br><br>
+<div class="container">
+    <div class="page-header">
+        <h4 class="page-title" style="color: white;" >ICT Dashboard</h4>
+        <ul class="breadcrumbs">
+            <li class="nav-home">
+                <a href="/index">
+                    <i class="flaticon-home"></i>
+                </a>
+            </li>
+            <li class="separator">
+                <i class="flaticon-right-arrow"></i>
+            </li>
+            <li class="nav-item">
+                <a href="/ict-google.html">Google Analytics</a>
+            </li>
+        </ul>
+    </div>
+</div>
+
+<!-- Loader Animation -->
+
+
+<div>
+    <div class="panel-header" style="background: linear-gradient(135deg, #254894, #71d397);">
+        <div class="page-inner py-5">
+            <div class="d-flex align-items-left align-items-md-center flex-column flex-md-row">
+                <div>
+                    <h1 class="text-white pb-2 fw-bold">Website Analytics</h1>
+                    <h4 class="text-white op-7 mb-2" style="color: white;">Analytics about African Guarantee Fund's Website</h4>
+                </div>
+                <div class="ml-md-auto py-2 py-md-0">
+                </div>
+            </div>
+        </div>
+    </div>
+	
+    <iframe id="analytics-frame" src="https://lookerstudio.google.com/embed/reporting/09a05fa2-c2dd-438b-b10c-ab0f0856ab99/page/kIV1C" frameborder="0" style="border:0" allowfullscreen sandbox="allow-storage-access-by-user-activation allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"></iframe>
+
+</div>
+
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+<script>
+    document.getElementById('analytics-frame').onload = function() {
+        document.getElementById('loader').style.display = 'none';
+    };
+</script>
+
+
+
+
+{% endblock javascripts %}

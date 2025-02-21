@@ -1,0 +1,14 @@
+#current-time, #current-weather {
+    margin-right: 20px;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+
+
+#current-weather img {
+    vertical-align: middle; /* Align the icon with the text */
+    margin-right: 5px; /* Add some space between the icon and the text */
+    width: 40px; /* Adjust the width of the icon */
+    height: auto; /* Maintain the aspect ratio */
+}
