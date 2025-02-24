@@ -8,6 +8,10 @@ from flask_login import (
 
 import pandas as pd
 
+import random, string
+
+from apps.authentication.util import hash_pass
+
 import logging
 from datetime import datetime, date, timezone, timedelta, time
 from apps import cache
@@ -82,22 +86,23 @@ def login():
     if 'login' in request.form:
         email = request.form['email']
         password = request.form['password']
-
-        # Locate user by email
         user = Users.query.filter_by(email=email).first()
-
-        # Check the password
+        
         if user and verify_pass(password, user.password):
             login_user(user)
+            
+            # Check if password change is required
+            if user.force_password_change:
+                flash('Please change your password.', 'warning')
+                return redirect(url_for('authentication_blueprint.change_password'))
+                
             return redirect(url_for('authentication_blueprint.route_default'))
-
-        return render_template('accounts/customlogin.html',
+            
+        return render_template('accounts/login.html',
                              msg='Wrong email or password',
                              form=login_form)
-    if not current_user.is_authenticated:
-            return render_template('accounts/customlogin.html',
-                                form=login_form)
-    return redirect(url_for('home_blueprint.index'))
+                             
+    return render_template('accounts/login.html', form=login_form)
 
 @blueprint.route('/admin/register', methods=['GET', 'POST'])
 def register():
@@ -145,6 +150,121 @@ def register():
 
     return render_template('accounts/register.html', form=create_account_form)
 
+# Edit user details
+@blueprint.route('/admin/edit-user', methods=['POST'])
+def edit_user():
+    user_id = request.form.get('user_id')
+    user = Users.query.get(user_id)
+    
+    if not user:
+        flash('User not found.', 'danger')
+        return redirect(url_for('authentication_blueprint.manage_permissions', user_id=user_id))
+    
+    try:
+        # Check if email is being changed and if it's already taken
+        new_email = request.form.get('email')
+        if new_email != user.email:
+            if Users.query.filter_by(email=new_email).first():
+                flash('Email already exists.', 'danger')
+                return redirect(url_for('authentication_blueprint.manage_permissions', user_id=user_id))
+        
+        # Check if username is being changed and if it's already taken
+        new_username = request.form.get('username')
+        if new_username != user.username:
+            if Users.query.filter_by(username=new_username).first():
+                flash('Username already exists.', 'danger')
+                return redirect(url_for('authentication_blueprint.manage_permissions', user_id=user_id))
+        
+        # Update user details
+        user.username = new_username
+        user.email = new_email
+        user.department_id = request.form.get('department_id')
+        
+        db.session.commit()
+        flash('User details updated successfully.', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error updating user: {str(e)}', 'danger')
+    
+    return redirect(url_for('authentication_blueprint.manage_permissions', user_id=user_id))
+
+# Reset password
+@blueprint.route('/admin/reset-password', methods=['POST'])
+def reset_password():
+    user_id = request.form.get('user_id')
+    user = Users.query.get(user_id)
+    
+    if not user:
+        flash('User not found.', 'danger')
+        return redirect(url_for('authentication_blueprint.manage_permissions', user_id=user_id))
+    
+    try:
+        # Generate a temporary password
+        temp_password = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
+        user.password = hash_pass(temp_password)
+        user.force_password_change = True  # Set the flag
+        db.session.commit()
+        
+        flash(f'Password reset successfully. Temporary password: {temp_password}', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error resetting password: {str(e)}', 'danger')
+    
+    return redirect(url_for('authentication_blueprint.manage_permissions', user_id=user_id))
+
+# Delete user
+@blueprint.route('/admin/delete-user', methods=['POST'])
+def delete_user():
+    user_id = request.form.get('user_id')
+    user = Users.query.get(user_id)
+    
+    if not user:
+        flash('User not found.', 'danger')
+        return redirect(url_for('authentication_blueprint.manage_permissions'))
+    
+    try:
+        # Store user info for message
+        username = user.username
+        
+        # Delete user
+        db.session.delete(user)
+        db.session.commit()
+        
+        flash(f'User {username} has been deleted successfully.', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting user: {str(e)}', 'danger')
+    
+    return redirect(url_for('authentication_blueprint.manage_permissions'))
+
+### Change User password
+@blueprint.route('/change-password', methods=['GET', 'POST'])
+def change_password():
+    if not current_user.is_authenticated:
+        return redirect(url_for('authentication_blueprint.login'))
+        
+    if request.method == 'POST':
+        new_password = request.form.get('new_password')
+        confirm_password = request.form.get('confirm_password')
+        
+        if new_password != confirm_password:
+            flash('Passwords do not match.', 'danger')
+            return redirect(url_for('authentication_blueprint.change_password'))
+            
+        try:
+            current_user.password = hash_pass(new_password)
+            current_user.force_password_change = False
+            db.session.commit()
+            flash('Password changed successfully.', 'success')
+            return redirect(url_for('home_blueprint.index'))
+        except Exception as e:
+            db.session.rollback()
+            flash('Error changing password.', 'danger')
+            
+    return render_template('accounts/change_password.html')
 
 @blueprint.route('/admin/manage-permissions', methods=['GET', 'POST'])
 def manage_permissions():

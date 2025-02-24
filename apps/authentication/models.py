@@ -29,6 +29,7 @@ class Users(db.Model, UserMixin):
     username = db.Column(db.String(64), unique=True)
     email = db.Column(db.String(64), unique=True, nullable=False)
     password = db.Column(db.LargeBinary)
+    force_password_change = db.Column(db.Boolean, default=False)
     department_id = db.Column(db.Integer, db.ForeignKey('departments.id', name='fk_user_department'))
     is_active = db.Column(db.Boolean, default=True)
     
