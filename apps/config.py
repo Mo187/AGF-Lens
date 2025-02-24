@@ -1,6 +1,7 @@
 # -*- encoding: utf-8 -*-"""
 
 import os, random, string
+import pymysql
 
 class Config(object):
     basedir = os.path.abspath(os.path.dirname(__file__))
@@ -23,23 +24,27 @@ class Config(object):
     DB_PORT     = os.getenv('DB_PORT', '3306')
     DB_NAME     = os.getenv('DB_NAME', None)
 
-    # Determine database URI
-    if DB_ENGINE and DB_NAME and DB_USERNAME:
-        try:
-            SQLALCHEMY_DATABASE_URI = '{}://{}:{}@{}:{}/{}'.format(
-                DB_ENGINE,
-                DB_USERNAME,
-                DB_PASS,
-                DB_HOST,
-                DB_PORT,
-                DB_NAME
+     # Default to SQLite path
+    SQLITE_DB = 'sqlite:///' + os.path.join(basedir, 'db.sqlite3')
+    
+    # Try MySQL first, fallback to SQLite
+    try:
+        if all([DB_ENGINE, DB_USERNAME, DB_PASS, DB_HOST, DB_NAME]):
+            SQLALCHEMY_DATABASE_URI = f'{DB_ENGINE}://{DB_USERNAME}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
+            # Test the connection
+            conn = pymysql.connect(
+                host=DB_HOST,
+                user=DB_USERNAME,
+                password=DB_PASS,
+                database=DB_NAME
             )
-        except Exception as e:
-            print('> Error: DBMS Exception: ' + str(e))
-            print('> Fallback to SQLite')
-            SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'db.sqlite3')
-    else:
-        SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'db.sqlite3')
+            conn.close()
+        else:
+            raise ValueError("Missing MySQL credentials")
+    except Exception as e:
+        print(f'> MySQL Connection Error: {str(e)}')
+        print('> Falling back to SQLite')
+        SQLALCHEMY_DATABASE_URI = SQLITE_DB
 
 
 class ProductionConfig(Config):

@@ -82,26 +82,42 @@ def route_default():
 @blueprint.route('/login', methods=['GET', 'POST'])
 def login():
     login_form = LoginForm(request.form)
-    if 'login' in request.form:
-        email = request.form['email']
-        password = request.form['password']
-        # Locate user by email
-        user = Users.query.filter_by(email=email).first()
-        # Check the password
-        if user and verify_pass(password, user.password):
-            login_user(user)
-            # Check if password change is required
-            if user.force_password_change:
-                flash('Please change your password.', 'warning')
-                return redirect(url_for('authentication_blueprint.change_password'))
-            return redirect(url_for('authentication_blueprint.route_default'))
-        return render_template('accounts/customlogin.html',
-                             msg='Wrong email or password',
-                             form=login_form)
-    if not current_user.is_authenticated:
+    
+    try:
+        if 'login' in request.form:
+            try:
+                email = request.form['email']
+                password = request.form['password']
+                # Locate user by email
+                user = Users.query.filter_by(email=email).first()
+                # Check the password
+                if user and verify_pass(password, user.password):
+                    login_user(user)
+                    # Check if password change is required
+                    if user.force_password_change:
+                        flash('Please change your password.', 'warning')
+                        return redirect(url_for('authentication_blueprint.change_password'))
+                    return redirect(url_for('authentication_blueprint.route_default'))
+                return render_template('accounts/customlogin.html',
+                                    msg='Wrong email or password',
+                                    form=login_form)
+            except Exception as e:
+                print(f"Database error during login attempt: {e}")
+                return render_template('accounts/customlogin.html',
+                                    msg='Unable to process login. Please try again.',
+                                    form=login_form)
+        
+        if not current_user.is_authenticated:
             return render_template('accounts/customlogin.html',
                                 form=login_form)
-    return redirect(url_for('home_blueprint.index'))
+        return redirect(url_for('home_blueprint.index'))
+    
+    except Exception as e:
+        print(f"Critical login page error: {e}")
+        # Ensure login page is always accessible
+        return render_template('accounts/customlogin.html',
+                            form=login_form,
+                            msg='System temporarily unavailable. Please try again later.')
 
 
 @blueprint.route('/admin/register', methods=['GET', 'POST'])
