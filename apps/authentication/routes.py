@@ -79,30 +79,30 @@ def route_default():
 #                                form=login_form)
 #     return redirect(url_for('home_blueprint.index'))
 
-
 @blueprint.route('/login', methods=['GET', 'POST'])
 def login():
     login_form = LoginForm(request.form)
     if 'login' in request.form:
         email = request.form['email']
         password = request.form['password']
+        # Locate user by email
         user = Users.query.filter_by(email=email).first()
-        
+        # Check the password
         if user and verify_pass(password, user.password):
             login_user(user)
-            
             # Check if password change is required
             if user.force_password_change:
                 flash('Please change your password.', 'warning')
                 return redirect(url_for('authentication_blueprint.change_password'))
-                
             return redirect(url_for('authentication_blueprint.route_default'))
-            
-        return render_template('accounts/login.html',
+        return render_template('accounts/customlogin.html',
                              msg='Wrong email or password',
                              form=login_form)
-                             
-    return render_template('accounts/login.html', form=login_form)
+    if not current_user.is_authenticated:
+            return render_template('accounts/customlogin.html',
+                                form=login_form)
+    return redirect(url_for('home_blueprint.index'))
+
 
 @blueprint.route('/admin/register', methods=['GET', 'POST'])
 def register():
@@ -189,7 +189,7 @@ def edit_user():
     
     return redirect(url_for('authentication_blueprint.manage_permissions', user_id=user_id))
 
-# Reset password
+# Reset User Password
 @blueprint.route('/admin/reset-password', methods=['POST'])
 def reset_password():
     user_id = request.form.get('user_id')
@@ -206,7 +206,8 @@ def reset_password():
         user.force_password_change = True  # Set the flag
         db.session.commit()
         
-        flash(f'Password reset successfully. Temporary password: {temp_password}', 'success')
+        # Here you could also send an email to the user with their temporary password
+        flash(f'Password reset successfully. Temporary password: {temp_password}. User will be required to change password at next login.', 'success')
         
     except Exception as e:
         db.session.rollback()

@@ -27,21 +27,21 @@ def register_blueprints(app):
         module = import_module('apps.{}.routes'.format(module_name))
         app.register_blueprint(module.blueprint)
 
-def configure_database(app):
 
+def configure_database(app):
     @app.before_first_request
     def initialize_database():
         try:
+            print('> Creating database tables...')
             db.create_all()
+            print('> Tables created successfully')
         except Exception as e:
-
-            print('> Error: DBMS Exception: ' + str(e) )
-
+            print('> Error: DBMS Exception: ' + str(e))
+            
             # fallback to SQLite
             basedir = os.path.abspath(os.path.dirname(__file__))
-            app.config['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'db.sqlite3')
-
-            print('> Fallback to SQLite ')
+            app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'db.sqlite3')
+            print('> Fallback to SQLite')
             db.create_all()
 
     @app.teardown_request
@@ -51,9 +51,13 @@ def configure_database(app):
 def init_default_data(app):
     with app.app_context():
         try:
+            # Create tables first
+            db.create_all()
+            
             # Check if data already exists
             if Department.query.first() is None:
-                # Add departments HERE OVER TIME
+                print("> No existing departments found. Creating default data...")
+                # Add departments
                 departments = [
                     Department(name='ICT', description='Information and Communications Technology'),
                     Department(name='HR', description='Human Resources'),
@@ -62,7 +66,7 @@ def init_default_data(app):
                 for dept in departments:
                     db.session.add(dept)
                 
-                # Add permissions HERE OVER TIME
+                # Add permissions
                 permissions = [
                     Permission(name='view_ict_dashboard', description='Can view ICT dashboard'),
                     Permission(name='view_bitdefender', description='Can view Bitdefender section'),
@@ -77,8 +81,15 @@ def init_default_data(app):
                 for perm in permissions:
                     db.session.add(perm)
                 
-                db.session.commit()
-                print("Successfully initialized default departments and permissions")
+                try:
+                    db.session.commit()
+                    print("Successfully initialized default departments and permissions")
+                except Exception as e:
+                    db.session.rollback()
+                    print(f"Error committing default data: {e}")
+            else:
+                print("> Default data already exists. Skipping initialization.")
+                
         except Exception as e:
             db.session.rollback()
             print(f"Error initializing default data: {e}")
@@ -87,6 +98,8 @@ def init_default_data(app):
 def create_app(config):
     app = Flask(__name__)
     
+    app.config.from_object(config)
+
     app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER')
     app.config['MAIL_PORT'] = 465
     app.config['MAIL_USE_SSL'] = True
@@ -94,17 +107,23 @@ def create_app(config):
     app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
     app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
     app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER')
-    app.config['MAIL_DEFAULT_SENDER'] = ['tiffany.tirop@africanguaranteefund.com','intern.it@africanguaranteefund.com','job.chumo@africanguaranteefund.com','stephen.kibuci@africanguaranteefund.com']
-    app.config.from_object(config)
-    # app.config('CACHE_TYPE') = 'SimpleCache'  # Use 'RedisCache' for production
-    # app.config('CACHE_DEFAULT_TIMEOUT') = 300  # Cache timeout in seconds (adjust as needed)
+    app.config['IT_TEAM_EMAILS'] = os.getenv('IT_TEAM_EMAILS')
+    app.config['CACHE_TYPE'] = 'SimpleCache'  # Use 'RedisCache' for production
+    app.config['CACHE_DEFAULT_TIMEOUT'] = 400  # Cache timeout in seconds (adjust as needed)
+    
     register_extensions(app)
     register_blueprints(app)
     configure_database(app)
     
     with app.app_context():
-        init_default_data(app)
-        
+            try:
+                # Ensure tables exist
+                db.create_all()
+                # Initialize default data
+                init_default_data(app)
+            except Exception as e:
+                print(f"Error during app initialization: {e}")
+            
     return app
 
 
