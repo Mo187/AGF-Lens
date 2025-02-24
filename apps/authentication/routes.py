@@ -48,6 +48,13 @@ fresh_passw = os.getenv('fresh_passw')
 def route_default():
     return redirect(url_for('authentication_blueprint.login'))
 
+@blueprint.route("/check-ip")
+def check_ip():
+    try:
+        ip = requests.get("https://api.ipify.org").text
+        return jsonify({"outbound_ip": ip})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 # Login & Registration
 
