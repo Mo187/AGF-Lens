@@ -6,6 +6,10 @@ from flask_login import (
     logout_user,login_required
 )
 
+from flask import current_app
+from flask_mail import Message
+
+
 import pandas as pd
 
 import random, string
@@ -13,12 +17,12 @@ import random, string
 from apps.authentication.util import hash_pass
 
 import logging
-from datetime import datetime, date, timezone, timedelta, time
+from datetime import date
 from apps import cache
 from functools import lru_cache
 
 import concurrent.futures
-from functools import partial
+from functools import wraps
 
 from apps.extensions import db, login_manager
 
@@ -30,17 +34,20 @@ from apps.authentication.util import verify_pass
 import os
 import requests
 import math
-import asyncio
 
 ## Local imports from Functions.py (Bitdefenfer, freshdesk etc...)
 from api.functions import get_company_details, get_endpoints_list, get_network_inventory_items, create_report, process_ticket, get_requesters, get_ticket_volume_over_time, get_ticket_status_distribution, get_average_resolution_time, get_agent_data
-from functions.licenses import send_email_reminder, already_sent_reminder, check_license_expirations
+from functions.licenses import send_email_reminder
 from apps.authentication.models import License, EmailLog, Category
+from apps.extensions import mail
+from apps.authentication.models import Users, Department, Permission
 
 #Freshdesk API creds
 fresh_url = os.getenv('fresh_url')
 fresh_key = os.getenv('fresh_key')
 fresh_passw = os.getenv('fresh_passw')
+
+
 
 
 
@@ -127,196 +134,338 @@ def login():
                             msg='System temporarily unavailable. Please try again later.')
 
 
-@blueprint.route('/admin/register', methods=['GET', 'POST'])
+
+# Admin decorator
+def admin_required(f):
+    @wraps(f)
+    @login_required
+    def decorated_function(*args, **kwargs):
+        try:
+            if not current_user.has_permission('admin'):
+                flash('You do not have permission to access this page.', 'danger')
+                return redirect(url_for('home_blueprint.index'))
+        except Exception as e:
+            print(f"> Error checking admin permissions: {e}")
+            flash('Error verifying permissions. Please try again.', 'danger')
+            return redirect(url_for('home_blueprint.index'))
+            
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+# Register route - admin only
+@blueprint.route('/register', methods=['GET', 'POST'])
+@admin_required
 def register():
-    create_account_form = CreateAccountForm(request.form)
+    from apps.authentication.forms import CreateAccountForm
+    from apps.authentication.models import Users, Department, Permission
+    
+    create_form = CreateAccountForm(request.form)
+    
     if 'register' in request.form:
-        # Check if email exists
+        username = request.form['username']
         email = request.form['email']
+        password = request.form['password']
+        department_id = int(request.form['department']) if request.form['department'] else None
+        permissions_ids = request.form.getlist('permissions')
+        
+        # Check if user exists
+        user = Users.query.filter_by(username=username).first()
+        if user:
+            return render_template('accounts/register.html',
+                                  msg='Username already registered',
+                                  success=False,
+                                  form=create_form)
+        
         user = Users.query.filter_by(email=email).first()
         if user:
             return render_template('accounts/register.html',
-                                msg='Email already registered',
-                                success=False,
-                                form=create_account_form)
-
+                                  msg='Email already registered',
+                                  success=False,
+                                  form=create_form)
+        
+        # Create the user
         try:
-            # Create user with basic info
+            # Create user with provided password
             user = Users(
-                username=request.form['username'],
-                email=request.form['email'],
-                password=request.form['password'],
-                department_id=create_account_form.department.data
+                username=username,
+                email=email,
+                password=password,  # __init__ method will hash this
+                force_password_change=True
             )
-
-            # Add permissions if selected
-            if create_account_form.permissions.data:
-                permissions = Permission.query.filter(
-                    Permission.id.in_(create_account_form.permissions.data)
-                ).all()
-                user.permissions.extend(permissions)
-
+            
+            # Add department if provided
+            if department_id:
+                user.department_id = department_id
+            
+            # Add selected permissions
+            if permissions_ids:
+                for perm_id in permissions_ids:
+                    permission = Permission.query.get(int(perm_id))
+                    if permission:
+                        user.permissions.append(permission)
+            
             db.session.add(user)
             db.session.commit()
-
+            
             return render_template('accounts/register.html',
-                                msg='User created successfully.',
-                                success=True,
-                                form=create_account_form)
-
+                                  msg='User created successfully.',
+                                  success=True,
+                                  form=create_form)
         except Exception as e:
             db.session.rollback()
+            print(f"> Error creating user: {e}")
             return render_template('accounts/register.html',
-                                msg=f'Error creating user: {str(e)}',
-                                success=False,
-                                form=create_account_form)
-
-    return render_template('accounts/register.html', form=create_account_form)
-
-# Edit user details
-@blueprint.route('/admin/edit-user', methods=['POST'])
-def edit_user():
-    user_id = request.form.get('user_id')
-    user = Users.query.get(user_id)
+                                  msg='Error creating user: ' + str(e),
+                                  success=False,
+                                  form=create_form)
     
-    if not user:
-        flash('User not found.', 'danger')
-        return redirect(url_for('authentication_blueprint.manage_permissions', user_id=user_id))
+    return render_template('accounts/register.html',
+                          form=create_form,
+                          success=False)
+                          
+                                 
+@blueprint.route('/admin/manage-permissions', methods=['GET', 'POST'])
+@admin_required
+def manage_permissions():
     
+    # Get selected user if provided
+    selected_user_id = request.args.get('user_id', None)
+    selected_user = None
+    
+    if selected_user_id:
+        try:
+            selected_user = Users.query.get(int(selected_user_id))
+        except Exception as e:
+            print(f"> Error fetching selected user: {e}")
+            flash('Error fetching user details.', 'danger')
+    
+    # Handle permission update if POST request
+    if request.method == 'POST':
+        try:
+            user_id = request.form.get('user_id')
+            if not user_id:
+                flash('User ID is required.', 'danger')
+                return redirect(url_for('authentication_blueprint.manage_permissions'))
+            
+            user = Users.query.get(int(user_id))
+            if not user:
+                flash('User not found.', 'danger')
+                return redirect(url_for('authentication_blueprint.manage_permissions'))
+            
+            # Update permissions
+            selected_permission_ids = request.form.getlist('permissions')
+            
+            # Clear existing permissions
+            user.permissions = []
+            
+            # Add selected permissions
+            if selected_permission_ids:
+                for perm_id in selected_permission_ids:
+                    permission = Permission.query.get(int(perm_id))
+                    if permission:
+                        user.permissions.append(permission)
+            
+            db.session.commit()
+            flash('Permissions updated successfully.', 'success')
+            
+            # Redirect to the same page with the user selected
+            return redirect(url_for('authentication_blueprint.manage_permissions', user_id=user.id))
+            
+        except Exception as e:
+            db.session.rollback()
+            print(f"> Error updating permissions: {e}")
+            flash(f'Error updating permissions: {str(e)}', 'danger')
+    
+    # Get all users, departments and permissions for display
     try:
-        # Check if email is being changed and if it's already taken
-        new_email = request.form.get('email')
-        if new_email != user.email:
-            if Users.query.filter_by(email=new_email).first():
-                flash('Email already exists.', 'danger')
-                return redirect(url_for('authentication_blueprint.manage_permissions', user_id=user_id))
+        users = Users.query.all()
+        departments = Department.query.all()
+        permissions = Permission.query.all()
+    except Exception as e:
+        print(f"> Error fetching data: {e}")
+        users = []
+        departments = []
+        permissions = []
+    
+    return render_template('accounts/permissions.html',
+                          users=users,
+                          departments=departments,
+                          permissions=permissions,
+                          selected_user=selected_user)
+
+@blueprint.route('/admin/edit-user', methods=['POST'])
+@admin_required
+def edit_user():
+    try:
+        user_id = request.form.get('user_id')
+        if not user_id:
+            flash('User ID is required.', 'danger')
+            return redirect(url_for('authentication_blueprint.manage_permissions'))
         
-        # Check if username is being changed and if it's already taken
-        new_username = request.form.get('username')
-        if new_username != user.username:
-            if Users.query.filter_by(username=new_username).first():
-                flash('Username already exists.', 'danger')
-                return redirect(url_for('authentication_blueprint.manage_permissions', user_id=user_id))
+        user = Users.query.get(int(user_id))
+        if not user:
+            flash('User not found.', 'danger')
+            return redirect(url_for('authentication_blueprint.manage_permissions'))
         
         # Update user details
-        user.username = new_username
-        user.email = new_email
-        user.department_id = request.form.get('department_id')
+        username = request.form.get('username')
+        email = request.form.get('email')
+        department_id = request.form.get('department_id')
+        
+        if username:
+            # Check if username is already taken by another user
+            existing_user = Users.query.filter(Users.username == username, Users.id != user.id).first()
+            if existing_user:
+                flash('Username already exists.', 'danger')
+                return redirect(url_for('authentication_blueprint.manage_permissions', user_id=user.id))
+            user.username = username
+            
+        if email:
+            # Check if email is already taken by another user
+            existing_user = Users.query.filter(Users.email == email, Users.id != user.id).first()
+            if existing_user:
+                flash('Email already exists.', 'danger')
+                return redirect(url_for('authentication_blueprint.manage_permissions', user_id=user.id))
+            user.email = email
+            
+        # Update department
+        if department_id:
+            user.department_id = int(department_id)
+        else:
+            user.department_id = None
         
         db.session.commit()
-        flash('User details updated successfully.', 'success')
+        flash('User updated successfully.', 'success')
         
     except Exception as e:
         db.session.rollback()
+        print(f"> Error updating user: {e}")
         flash(f'Error updating user: {str(e)}', 'danger')
-    
+        
     return redirect(url_for('authentication_blueprint.manage_permissions', user_id=user_id))
 
-# Reset User Password
 @blueprint.route('/admin/reset-password', methods=['POST'])
+@admin_required
 def reset_password():
-    user_id = request.form.get('user_id')
-    user = Users.query.get(user_id)
-    
-    if not user:
-        flash('User not found.', 'danger')
-        return redirect(url_for('authentication_blueprint.manage_permissions', user_id=user_id))
-    
     try:
-        # Generate a temporary password
-        temp_password = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
-        user.password = hash_pass(temp_password)
-        user.force_password_change = True  # Set the flag
+        user_id = request.form.get('user_id')
+        if not user_id:
+            flash('User ID is required.', 'danger')
+            return redirect(url_for('authentication_blueprint.manage_permissions'))
+        
+        user = Users.query.get(int(user_id))
+        if not user:
+            flash('User not found.', 'danger')
+            return redirect(url_for('authentication_blueprint.manage_permissions'))
+        
+        temp_pass = ''.join(random.choice(string.ascii_letters + string.digits) for i in range(10))
+        
+        # Set the new password
+        user.password = temp_pass  # Your Users model __init__ will hash this
+        user.force_password_change = True
+        
         db.session.commit()
         
-        # Here you could also send an email to the user with their temporary password
-        flash(f'Password reset successfully. Temporary password: {temp_password}. User will be required to change password at next login.', 'success')
+        # Try to send email notification
+        try:
+          
+            
+            if current_app.config.get('MAIL_USERNAME') and current_app.config.get('MAIL_PASSWORD'):
+                msg = Message(
+                    subject="Your Password Has Been Reset",
+                    recipients=[user.email],
+                    body=f"Your password has been reset by an administrator.\n\nYour temporary password is: {temp_pass}\n\nYou will be required to change your password after logging in.",
+                    sender=current_app.config.get('MAIL_DEFAULT_SENDER')
+                )
+                mail.send(msg)
+                flash(f'Password reset successfully. Temporary password: {temp_pass}', 'success')
+            else:
+                flash(f'Password reset successfully. Temporary password: {temp_pass}', 'success')
+        except Exception as mail_error:
+            print(f"> Error sending email: {mail_error}")
+            flash(f'Password reset successfully, but email notification failed. Temporary password: {temp_pass}', 'warning')
         
     except Exception as e:
         db.session.rollback()
+        print(f"> Error resetting password: {e}")
         flash(f'Error resetting password: {str(e)}', 'danger')
-    
+        
     return redirect(url_for('authentication_blueprint.manage_permissions', user_id=user_id))
 
-# Delete user
-@blueprint.route('/admin/delete-user', methods=['POST'])
-def delete_user():
-    user_id = request.form.get('user_id')
-    user = Users.query.get(user_id)
-    
-    if not user:
-        flash('User not found.', 'danger')
-        return redirect(url_for('authentication_blueprint.manage_permissions'))
-    
+@blueprint.route('/admin/toggle-user-status', methods=['POST'])
+@admin_required
+def toggle_user_status():
     try:
-        # Store user info for message
+        user_id = request.form.get('user_id')
+        action = request.form.get('action')
+        
+        if not user_id or not action:
+            flash('User ID and action are required.', 'danger')
+            return redirect(url_for('authentication_blueprint.manage_permissions'))
+        
+        user = Users.query.get(int(user_id))
+        if not user:
+            flash('User not found.', 'danger')
+            return redirect(url_for('authentication_blueprint.manage_permissions'))
+        
+        # Toggle status based on action
+        if action == 'activate':
+            user.is_active = True
+            message = 'User activated successfully.'
+        elif action == 'deactivate':
+            user.is_active = False
+            message = 'User deactivated successfully.'
+        else:
+            flash('Invalid action.', 'danger')
+            return redirect(url_for('authentication_blueprint.manage_permissions', user_id=user.id))
+        
+        db.session.commit()
+        flash(message, 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"> Error toggling user status: {e}")
+        flash(f'Error updating user status: {str(e)}', 'danger')
+        
+    return redirect(url_for('authentication_blueprint.manage_permissions', user_id=user_id))
+
+@blueprint.route('/admin/delete-user', methods=['POST'])
+@admin_required
+def delete_user():
+    try:
+        user_id = request.form.get('user_id')
+        if not user_id:
+            flash('User ID is required.', 'danger')
+            return redirect(url_for('authentication_blueprint.manage_permissions'))
+        
+        user = Users.query.get(int(user_id))
+        if not user:
+            flash('User not found.', 'danger')
+            return redirect(url_for('authentication_blueprint.manage_permissions'))
+        
+        # Don't allow deletion of the user's own account
+        if user.id == current_user.id:
+            flash('You cannot delete your own account.', 'danger')
+            return redirect(url_for('authentication_blueprint.manage_permissions'))
+        
         username = user.username
         
-        # Delete user
+        # Delete the user
         db.session.delete(user)
         db.session.commit()
         
-        flash(f'User {username} has been deleted successfully.', 'success')
+        flash(f'User "{username}" deleted successfully.', 'success')
         
     except Exception as e:
         db.session.rollback()
+        print(f"> Error deleting user: {e}")
         flash(f'Error deleting user: {str(e)}', 'danger')
-    
+        
     return redirect(url_for('authentication_blueprint.manage_permissions'))
 
-### Change User password
-@blueprint.route('/change-password', methods=['GET', 'POST'])
-def change_password():
-    if not current_user.is_authenticated:
-        return redirect(url_for('authentication_blueprint.login'))
-        
-    if request.method == 'POST':
-        new_password = request.form.get('new_password')
-        confirm_password = request.form.get('confirm_password')
-        
-        if new_password != confirm_password:
-            flash('Passwords do not match.', 'danger')
-            return redirect(url_for('authentication_blueprint.change_password'))
-            
-        try:
-            current_user.password = hash_pass(new_password)
-            current_user.force_password_change = False
-            db.session.commit()
-            flash('Password changed successfully.', 'success')
-            return redirect(url_for('home_blueprint.index'))
-        except Exception as e:
-            db.session.rollback()
-            flash('Error changing password.', 'danger')
-            
-    return render_template('accounts/change_password.html')
 
-@blueprint.route('/admin/manage-permissions', methods=['GET', 'POST'])
-def manage_permissions():
-    users = Users.query.order_by(Users.username).all()
-    all_permissions = Permission.query.order_by(Permission.name).all()
-    
-    # Get selected user if any
-    selected_user_id = request.args.get('user_id')
-    selected_user = Users.query.get(selected_user_id) if selected_user_id else None
-    
-    if request.method == 'POST':
-        user_id = request.form.get('user_id')
-        selected_permissions = request.form.getlist('permissions')
-        
-        user = Users.query.get(user_id)
-        if user:
-            selected_permission_ids = [int(p_id) for p_id in selected_permissions]
-            new_permissions = Permission.query.filter(Permission.id.in_(selected_permission_ids)).all()
-            user.permissions = new_permissions
-            db.session.commit()
-            flash(f'Permissions updated for {user.username}', 'success')
-            
-    return render_template('accounts/permissions.html',
-                         users=users,
-                         permissions=all_permissions,
-                         selected_user=selected_user,
-                         segment='permissions')
-
+########################################################################
 
 def insert_data_from_excel(file_path):
     data = pd.read_excel(file_path)
@@ -339,6 +488,7 @@ def insert_data():
 
 # For ICT Inventory management table of workstations and laptops
 @blueprint.route('/ict-ims.html')
+@login_required
 def inventory():
     inventories = Inventory.query.all()
     missing_serial_count = Inventory.query.filter(Inventory.serial_number == None).count()
@@ -349,6 +499,7 @@ def inventory():
 
 
 @blueprint.route('/inventory/add', methods=['POST'])
+@login_required
 def add_inventory():
     employee_name = request.form['employee_name']
     laptop_model = request.form['laptop_model']
@@ -367,6 +518,7 @@ def add_inventory():
 
 
 @blueprint.route('/inventory/edit/<int:id>', methods=['POST'])
+@login_required
 def edit_inventory(id):
     inventory = Inventory.query.get_or_404(id)
     inventory.employee_name = request.form['employee_name']
@@ -379,6 +531,7 @@ def edit_inventory(id):
 
 
 @blueprint.route('/inventory/delete/<int:id>', methods=['POST'])
+@login_required
 def delete_inventory(id):
     inventory = Inventory.query.get_or_404(id)
     db.session.delete(inventory)
@@ -411,6 +564,7 @@ def fetch_inventory_page(parent_id, page, per_page, filters, options):
 
 @cache.cached(timeout=300)
 @blueprint.route('/bitdefender_data', methods=['GET'])
+@login_required
 def get_dashboard_data():
     logging.info("Fetching dashboard data...")
     
@@ -498,6 +652,7 @@ def get_dashboard_data():
 
 
 @blueprint.route('/get_company_id', methods=['GET'])
+@login_required
 def get_company_id():
     details = get_company_details()
     if details is None:
@@ -506,6 +661,7 @@ def get_company_id():
     return {"company_id": details['id']}
 
 @blueprint.route('/get_endpoint_ids', methods=['GET'])
+@login_required
 def get_endpoint_ids():
     parent_id = request.args.get('parent_id')
     endpoints = get_endpoints_list(parent_id, is_managed=True)
@@ -523,6 +679,7 @@ def get_endpoint_ids():
 from urllib.parse import quote_plus
 
 @blueprint.route('/ict-helpdesk', methods=['GET'])
+@login_required
 def ict_helpdesk():
     """Main route that returns the initial template without data"""
     return render_template(
@@ -531,6 +688,7 @@ def ict_helpdesk():
     )
 
 @blueprint.route('/api/helpdesk/basic-stats', methods=['GET'])
+@login_required
 @cache.cached(timeout=300)
 def get_basic_stats():
     try:
@@ -566,6 +724,7 @@ def get_basic_stats():
         return jsonify({'error': str(e)}), 500
 
 @blueprint.route('/api/helpdesk/detailed-stats', methods=['GET'])
+@login_required
 @cache.cached(timeout=300)
 def get_detailed_stats():
     try:
@@ -596,6 +755,7 @@ def get_detailed_stats():
         return jsonify({'error': str(e)}), 500
 
 @blueprint.route('/api/helpdesk/recent-activity', methods=['GET'])
+@login_required
 @cache.cached(timeout=300)
 def get_recent_activity():
     try:
@@ -666,10 +826,12 @@ def handle_404_error(e):
 #############################################################################################
 
 @blueprint.route('/ict-license')
+@login_required
 def index():
     return render_template('home/licenses.html', segment='ict-license')
 
 @blueprint.route('/ict-license/test_email/<int:license_id>/<interval>', methods=['GET'])
+@login_required
 def test_email(license_id, interval):
     lic = License.query.get_or_404(license_id)
     send_email_reminder(lic, interval)
@@ -677,6 +839,7 @@ def test_email(license_id, interval):
 
 # CATEGORY ROUTES
 @blueprint.route('/ict-license/categories', methods=['GET', 'POST', 'PUT', 'DELETE'])
+@login_required
 def handle_categories():
     if request.method == 'GET':
         categories = Category.query.all()
@@ -734,6 +897,7 @@ def handle_categories():
 
 
 @blueprint.route('/ict-license/licenses', methods=['GET', 'POST'])
+@login_required
 def manage_licenses():
     if request.method == 'GET':
         # Filtering by category, type, computed_status
@@ -806,6 +970,7 @@ def manage_licenses():
         return jsonify(new_license.to_dict()), 201
 
 @blueprint.route('/ict-license/licenses/<int:license_id>', methods=['GET', 'PUT', 'DELETE'])
+@login_required
 def single_license(license_id):
     lic = License.query.get_or_404(license_id)
     if request.method == 'GET':
@@ -845,6 +1010,7 @@ def single_license(license_id):
 
 # BULK UPDATE ENDPOINT
 @blueprint.route('/ict-license/licenses/bulk_update', methods=['POST'])
+@login_required
 def bulk_update_licenses():
     """
     Expect JSON payload:

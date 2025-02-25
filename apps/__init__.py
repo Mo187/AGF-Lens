@@ -9,6 +9,8 @@ from sqlalchemy import inspect
 ## local imports
 from apps.authentication.models import Department, Permission
 from apps.extensions import db, login_manager, cache, compress, cors, mail, init_scheduler, init_login_manager
+from apps.authentication.models import Users, Permission
+from apps.authentication.util import hash_pass
 
 cache = Cache(config={
     'CACHE_TYPE': 'SimpleCache',
@@ -35,26 +37,22 @@ def configure_database(app):
     def initialize_database():
         try:
             db.create_all()
+            print("> Database tables created successfully")
         except Exception as e:
-            print(f'> Database initialization error: {str(e)}')
-            # Fall back to SQLite
-            app.config['SQLALCHEMY_DATABASE_URI'] = app.config['SQLITE_DB']
-            try:
-                db.create_all()
-            except Exception as inner_e:
-                print(f'> Critical: Both MySQL and SQLite failed: {str(inner_e)}')
+            print(f"> Database initialization error: {str(e)}")
+            print("> App will continue to run but some features may be limited")
 
     @app.teardown_request
     def shutdown_session(exception=None):
         try:
             db.session.remove()
         except Exception as e:
-            print(f'> Session removal error: {str(e)}')
+            print(f"> Session removal error: {str(e)}")
+
 
 def init_default_data(app):
     with app.app_context():
         try:
-            from sqlalchemy import inspect
             inspector = inspect(db.engine)
             
             # Check if tables exist using the proper inspection method
@@ -88,13 +86,69 @@ def init_default_data(app):
                         db.session.add(perm)
                     
                     db.session.commit()
-                    print("Successfully initialized default data")
+                    print("> Successfully initialized default data")
                 except Exception as e:
-                    print(f"Error adding default data: {e}")
+                    print(f"> Error initializing default data: {e}")
                     db.session.rollback()
         except Exception as e:
-            print(f"Database initialization skipped: {e}")
+            print(f"> Database feature check skipped: {e}")
+            print("> App will continue to run but with limited database functionality")
             
+            
+
+def init_admin_user(app):
+
+    
+    with app.app_context():
+        try:
+            # Check if admin user exists
+            admin_email = os.getenv('ADMIN_EMAIL')
+            
+            if not admin_email:
+                print("> ADMIN_EMAIL not set in environment variables. Skipping admin user creation.")
+                return
+                
+            admin_username = os.getenv('ADMIN_USER', 'admin')
+            admin_password = os.getenv('ADMIN_PASSW')
+            
+            if not admin_password:
+                print("> ADMIN_PASSWORD not set in environment variables. Skipping admin user creation.")
+                return
+                
+            # Check if admin user already exists
+            existing_admin = Users.query.filter_by(email=admin_email).first()
+            
+            if existing_admin:
+                print(f"> Admin user with email {admin_email} already exists.")
+                return
+                
+            # Get admin permission
+            admin_permission = Permission.query.filter_by(name='admin').first()
+            
+            if not admin_permission:
+                print("> Admin permission does not exist in the database. Make sure to run init_default_data first.")
+                return
+                
+            # Create admin user
+            admin_user = Users(
+                username=admin_username,
+                email=admin_email,
+                password=admin_password,  # The model's __init__ will hash this
+                is_active=True
+            )
+            
+            # Add admin permission
+            admin_user.permissions.append(admin_permission)
+            
+            # Save to database
+            db.session.add(admin_user)
+            db.session.commit()
+            
+            print(f"> Admin user '{admin_username}' created successfully with email '{admin_email}'")
+            
+        except Exception as e:
+            db.session.rollback()
+            print(f"> Error creating admin user: {e}")
             
 # def init_default_data(app):
 #     with app.app_context():
@@ -161,14 +215,19 @@ def create_app(config):
     
     register_extensions(app)
     register_blueprints(app)
-    configure_database(app)
     
     try:
         configure_database(app)
-        with app.app_context():
-            init_default_data(app)
     except Exception as e:
-        print(f"Database setup error (app will continue): {e}")
+        print(f"> Database setup error (app will continue): {e}")
+    
+    # Try to initialize data but don't let failures stop the app
+    try:
+        with app.app_context():
+            init_default_data(app) ## creating default departments and perms
+            init_admin_user(app) ## for creating admin automatically
+    except Exception as e:
+        print(f"> Data initialization error (app will continue): {e}")
             
     return app
 

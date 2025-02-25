@@ -17,7 +17,6 @@ def index():
 
 
 
-
 @blueprint.route('/<template>')
 @login_required
 def route_template(template):

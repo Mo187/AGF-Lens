@@ -1,7 +1,7 @@
-# -*- encoding: utf-8 -*-"""
-
-import os, random, string
-import pymysql
+# -*- encoding: utf-8 -*-
+import os
+import random
+import string
 
 class Config(object):
     basedir = os.path.abspath(os.path.dirname(__file__))
@@ -16,7 +16,7 @@ class Config(object):
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    # Database settings
+    # Database settings - MySQL only
     DB_ENGINE   = os.getenv('DB_ENGINE', 'mysql+pymysql')
     DB_USERNAME = os.getenv('DB_USERNAME', None)
     DB_PASS     = os.getenv('DB_PASS', None)
@@ -24,55 +24,38 @@ class Config(object):
     DB_PORT     = os.getenv('DB_PORT', '3306')
     DB_NAME     = os.getenv('DB_NAME', None)
 
-     # Default to SQLite path
-    SQLITE_DB = 'sqlite:///' + os.path.join(basedir, 'db.sqlite3')
-    
-    # Try MySQL first, fallback to SQLite
-    try:
-        if all([DB_ENGINE, DB_USERNAME, DB_PASS, DB_HOST, DB_NAME]):
-            SQLALCHEMY_DATABASE_URI = f'{DB_ENGINE}://{DB_USERNAME}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
-            # Test the connection
-            conn = pymysql.connect(
-                host=DB_HOST,
-                user=DB_USERNAME,
-                password=DB_PASS,
-                database=DB_NAME
-            )
-            conn.close()
-        else:
-            raise ValueError("Missing MySQL credentials")
-    except Exception as e:
-        print(f'> MySQL Connection Error: {str(e)}')
-        print('> Falling back to SQLite')
-        SQLALCHEMY_DATABASE_URI = SQLITE_DB
+    # Set MySQL URI
+    SQLALCHEMY_DATABASE_URI = '{}://{}:{}@{}:{}/{}'.format(
+        DB_ENGINE,
+        DB_USERNAME,
+        DB_PASS,
+        DB_HOST,
+        DB_PORT,
+        DB_NAME
+    )
 
+    # Mail settings
+    MAIL_SERVER = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
+    MAIL_PORT = int(os.getenv('MAIL_PORT', 465))
+    MAIL_USE_SSL = os.getenv('MAIL_USE_SSL', 'True') == 'True'
+    MAIL_USE_TLS = os.getenv('MAIL_USE_TLS', 'False') == 'True'
+    MAIL_USERNAME = os.getenv('MAIL_USERNAME', None)
+    MAIL_PASSWORD = os.getenv('MAIL_PASSWORD', None)
+    MAIL_DEFAULT_SENDER = os.getenv('MAIL_DEFAULT_SENDER', None)
+
+    # Cache settings
+    CACHE_TYPE = 'SimpleCache'
+    CACHE_DEFAULT_TIMEOUT = 60 * 60  # 1 hour
 
 class ProductionConfig(Config):
     DEBUG = False
     
-    # Security settings
     SESSION_COOKIE_HTTPONLY = True
     REMEMBER_COOKIE_HTTPONLY = True
     REMEMBER_COOKIE_DURATION = 3600
-    
-    # Production database settings
-    DB_ENGINE = os.getenv('DB_ENGINE', 'mysql+pymysql')
-    
-    # Cache settings
-    CACHE_TYPE = 'SimpleCache'
-    CACHE_DEFAULT_TIMEOUT = 60 * 60  # 1 hour cache timeout
-
 
 class DebugConfig(Config):
     DEBUG = True
-    
-    # Development database settings (can fallback to SQLite more easily)
-    USE_SQLITE = os.getenv('USE_SQLITE', 'False') == 'True'
-    
-    # Development cache settings
-    CACHE_TYPE = 'SimpleCache'
-    CACHE_DEFAULT_TIMEOUT = 0  # Disable cache in development
-
 
 # Load all possible configurations
 config_dict = {

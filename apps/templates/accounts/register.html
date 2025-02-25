@@ -1,6 +1,6 @@
 {% extends "layouts/base.html" %}
 
-{% block title %} Register {% endblock %} 
+{% block title %} Register New User {% endblock %} 
 
 <!-- Specific Page CSS goes HERE  -->
 {% block stylesheets %}
@@ -19,6 +19,57 @@
     .select2-container--default .select2-search--inline .select2-search__field {
         color: white;
     }
+    .select2-container--default .select2-selection--single {
+        background-color: #1a2035;
+        border: 1px solid #2f374b;
+        color: white;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        color: white;
+    }
+    .select2-dropdown {
+        background-color: #202940;
+        border: 1px solid #2f374b;
+    }
+    .select2-container--default .select2-results__option--highlighted[aria-selected] {
+        background-color: #1572e8;
+    }
+    .select2-container--default .select2-results__option[aria-selected=true] {
+        background-color: #1a2035;
+    }
+    .select2-container--default .select2-search--dropdown .select2-search__field {
+        background-color: #202940;
+        border: 1px solid #2f374b;
+        color: white;
+    }
+    .password-strength-meter {
+        height: 5px;
+        margin-top: 5px;
+        background: #ddd;
+        border-radius: 3px;
+    }
+    .password-strength-meter div {
+        height: 5px;
+        border-radius: 3px;
+        transition: width 0.5s ease;
+    }
+    .password-strength-text {
+        font-size: 12px;
+        margin-top: 5px;
+    }
+    .group-permissions {
+        margin-top: 15px;
+        border: 1px solid #2f374b;
+        border-radius: 5px;
+        padding: 10px;
+    }
+    .permission-group {
+        margin-bottom: 10px;
+    }
+    .permission-group-title {
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
 </style>
 {% endblock stylesheets %}
 
@@ -26,10 +77,10 @@
 
     <div class="page-inner">
         <div class="page-header">
-            <h4 class="page-title">Login</h4>
+            <h4 class="page-title">Register New User</h4>
             <ul class="breadcrumbs">
                 <li class="nav-home">
-                    <a href="#">
+                    <a href="{{ url_for('home_blueprint.index') }}">
                         <i class="flaticon-home"></i>
                     </a>
                 </li>
@@ -37,13 +88,13 @@
                     <i class="flaticon-right-arrow"></i>
                 </li>
                 <li class="nav-item">
-                    <a href="#">Authentication</a>
+                    <a href="#">Administration</a>
                 </li>
                 <li class="separator">
                     <i class="flaticon-right-arrow"></i>
                 </li>
                 <li class="nav-item">
-                    <a href="#">Login</a>
+                    <a href="#">Register User</a>
                 </li>
             </ul>
         </div>
@@ -52,32 +103,33 @@
                 <div class="card">
                     <div class="card-header">
                         <div class="card-title">
-
                             {% if msg %}
-                                <span class="text-danger">{{ msg | safe }}</span>
+                                <span class="text-{% if success %}success{% else %}danger{% endif %}">{{ msg | safe }}</span>
                             {% else %}
-                                <span>Register</span>
+                                <span>Register New User</span>
                             {% endif %}
-
                         </div>
                     </div>
 
                     {% if success %}
-
-                    <div class="card-action">
-                        <a href="{{ url_for('authentication_blueprint.login') }}" class="btn btn-success">Sign IN</a>
+                    <div class="card-body">
+                        <div class="alert alert-success">
+                            <h4><i class="fa fa-check-circle"></i> User created successfully!</h4>
+                            <p>The user will receive an email with their login credentials.</p>
+                        </div>
                     </div>
-
+                    <div class="card-action">
+                        <a href="{{ url_for('authentication_blueprint.register') }}" class="btn btn-primary">Create Another User</a>
+                        <a href="{{ url_for('authentication_blueprint.manage_permissions') }}" class="btn btn-info">Manage Users</a>
+                    </div>
                     {% else %}
-
                         <form method="post" action="">
-
                             {{ form.hidden_tag() }}
 
                             <div class="card-body">
                                 <div class="row">
-                                    <div class="col-md-6 col-lg-4">
-
+                                    <div class="col-md-6">
+                                        <h4>User Information</h4>
                                         <div class="form-group">
                                             <div class="input-group mb-3">
                                                 <div class="input-group-prepend">
@@ -85,8 +137,9 @@
                                                         <i class="icon-user"></i>
                                                     </span>
                                                 </div>
-                                                {{ form.username(placeholder="Username", class="form-control") }}
+                                                {{ form.username(placeholder="Username", class="form-control", required=true) }}
                                             </div>
+                                            <small class="form-text text-muted">Username must be at least 6 characters.</small>
                                         </div>
 
                                         <div class="form-group">
@@ -96,7 +149,7 @@
                                                         <i class="icon-envelope"></i>
                                                     </span>
                                                 </div>
-                                                {{ form.email(placeholder="Email Address",class="form-control") }}
+                                                {{ form.email(placeholder="Email Address", class="form-control", required=true) }}
                                             </div>
                                         </div>
 
@@ -107,8 +160,15 @@
                                                         <i class="icon-lock"></i>
                                                     </span>
                                                 </div>
-                                                {{ form.password(placeholder="Password", class="form-control", type="password") }}
+                                                {{ form.password(placeholder="Password", class="form-control", type="password", id="password", required=true) }}
                                             </div>
+                                            <div class="password-strength-meter">
+                                                <div id="password-strength-bar"></div>
+                                            </div>
+                                            <div class="password-strength-text" id="password-strength-text"></div>
+                                            <small class="form-text text-muted mt-2">
+                                                Password must be at least 8 characters and include a combination of letters, numbers, and special characters.
+                                            </small>
                                         </div>
 
                                         <div class="form-group">
@@ -118,12 +178,22 @@
                                                         <i class="icon-briefcase"></i>
                                                     </span>
                                                 </div>
-                                                {{ form.department(class="form-control") }}
+                                                {{ form.department(class="form-control select2-single") }}
                                             </div>
                                         </div>
                                         
+                                        <div class="form-check">
+                                            <label class="form-check-label">
+                                                <input type="checkbox" class="form-check-input" name="force_password_change" checked>
+                                                <span class="form-check-sign">Force user to change password on first login</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <h4>User Permissions</h4>
                                         <div class="form-group">
-                                            <label>Permissions</label>
+                                            <label>All Permissions</label>
                                             <div class="input-group">
                                                 <div class="input-group-prepend">
                                                     <span class="input-group-text">
@@ -133,22 +203,80 @@
                                                 {{ form.permissions(class="form-control select2-multiple", multiple="multiple") }}
                                             </div>
                                         </div>
+                                        
+                                        <div class="group-permissions">
+                                            <h5>Quick Permission Groups</h5>
+                                            
+                                            <div class="row">
 
+                                                <div class="col-md-6">
+
+                                                    <div class="permission-group">
+                                                        <div class="permission-group-title">ICT Access</div>
+                                                        <div class="form-check">
+                                                            <label class="form-check-label">
+                                                                <input type="checkbox" class="form-check-input permission-group-check" data-group="ict">
+                                                                <span class="form-check-sign">Select All ICT</span>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-6">
+                                                    <div class="permission-group">
+                                                        <div class="permission-group-title">HR Access</div>
+                                                        <div class="form-check">
+                                                            <label class="form-check-label">
+                                                                <input type="checkbox" class="form-check-input permission-group-check" data-group="hr">
+                                                                <span class="form-check-sign">Select All HR</span>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                            </div>
+
+                                            <div class="row">
+
+                                                <div class="col-md-6">
+                                                    <div class="permission-group">
+                                                        <div class="permission-group-title">Risk Access</div>
+                                                        <div class="form-check">
+                                                            <label class="form-check-label">
+                                                                <input type="checkbox" class="form-check-input permission-group-check" data-group="risk">
+                                                                <span class="form-check-sign">Select All Risk</span>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-6">
+                                                    <div class="permission-group">
+                                                        <div class="permission-group-title">Administrator</div>
+                                                        <div class="form-check">
+                                                            <label class="form-check-label" >
+                                                                <input type="checkbox" class="form-check-input permission-group-check" data-group="admin">
+                                                                <span class="form-check-sign">Grant Admin Access</span>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                             <div class="card-action">
-                                <button type="submit" name="register" class="btn btn-success">Submit</button>
-                                &nbsp; &nbsp;
-                                <span>Already have and account?</span> <a href="{{ url_for('authentication_blueprint.login') }}">Login</a>
+                                <button type="submit" name="register" class="btn btn-success">
+                                    <i class="fa fa-user-plus"></i> Create User
+                                </button>
+                                <a href="{{ url_for('authentication_blueprint.manage_permissions') }}" class="btn btn-danger">
+                                    <i class="fa fa-times"></i> Cancel
+                                </a>
                             </div>
-
                         </form>
-
                     {% endif %}
-
-
-
                 </div>
             </div>
         </div>
@@ -158,22 +286,126 @@
 
 <!-- Specific Page JS goes HERE  -->
 {% block javascripts %}
-
-<!-- Preloader -->
-<script>
-    $(window).on("load",function(){
-      $("#preloader").fadeOut(1000);
-    });
-</script>
-
 <!-- Select2 js for multiple selections in permissions part -->
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
 $(document).ready(function() {
+    // Initialize Select2 for permissions multi-select
     $('.select2-multiple').select2({
         theme: "classic",
         placeholder: "Select permissions",
         allowClear: true
+    });
+    
+    // Initialize Select2 for department single-select
+    $('.select2-single').select2({
+        theme: "classic",
+        placeholder: "Select department",
+        allowClear: true
+    });
+    
+    // Password strength meter
+    $('#password').on('keyup', function() {
+        var password = $(this).val();
+        var strength = 0;
+        
+        // Password length check
+        if (password.length >= 8) {
+            strength += 25;
+        }
+        
+        // Check for letters
+        if (password.match(/[a-z]/)) {
+            strength += 15;
+        }
+        
+        // Check for capital letters
+        if (password.match(/[A-Z]/)) {
+            strength += 20;
+        }
+        
+        // Check for numbers
+        if (password.match(/[0-9]/)) {
+            strength += 20;
+        }
+        
+        // Check for special characters
+        if (password.match(/[^a-zA-Z0-9]/)) {
+            strength += 20;
+        }
+        
+        // Update the password strength meter
+        var strengthBar = $('#password-strength-bar');
+        var strengthText = $('#password-strength-text');
+        
+        if (strength == 0) {
+            strengthBar.css('width', '0%').css('background', '');
+            strengthText.text('').css('color', '');
+        } else if (strength < 30) {
+            strengthBar.css('width', '25%').css('background', '#f25961');
+            strengthText.text('Weak').css('color', '#f25961');
+        } else if (strength < 60) {
+            strengthBar.css('width', '50%').css('background', '#ffad46');
+            strengthText.text('Fair').css('color', '#ffad46');
+        } else if (strength < 80) {
+            strengthBar.css('width', '75%').css('background', '#2bb930');
+            strengthText.text('Good').css('color', '#2bb930');
+        } else {
+            strengthBar.css('width', '100%').css('background', '#1eaa69');
+            strengthText.text('Strong').css('color', '#1eaa69');
+        }
+    });
+    
+    // Permission groups functionality
+    $('.permission-group-check').on('change', function() {
+        var group = $(this).data('group');
+        var isChecked = $(this).prop('checked');
+        
+        // Get the Select2 instance
+        var select2 = $('.select2-multiple');
+        
+        // Get current selected values
+        var selectedValues = select2.val() || [];
+        
+        // Map permissions to their groups
+        var permissionGroups = {
+            'ict': ['view_ict_dashboard', 'view_bitdefender', 'view_ict_assets', 'view_ict_google', 'view_ict_freshdesk', 'view_ict_license'],
+            'hr': ['view_hr_dashboard'],
+            'risk': ['view_hr_risk'],
+            'admin': ['admin']
+        };
+        
+        // Get all options from the select
+        var options = select2.find('option');
+        var permissionsToToggle = [];
+        
+        // Find permission IDs for the selected group
+        options.each(function() {
+            var optionText = $(this).text();
+            var permissionName = optionText.split(' - ')[0].trim();
+            
+            if (permissionGroups[group] && permissionGroups[group].includes(permissionName)) {
+                permissionsToToggle.push($(this).val());
+            }
+        });
+        
+        // Update selected values
+        if (isChecked) {
+            // Add the permissions to the selected values
+            permissionsToToggle.forEach(function(permId) {
+                if (selectedValues.indexOf(permId) === -1) {
+                    selectedValues.push(permId);
+                }
+            });
+        } else {
+            // Remove the permissions from the selected values
+            selectedValues = selectedValues.filter(function(value) {
+                return permissionsToToggle.indexOf(value) === -1;
+            });
+        }
+        
+        // Update the select
+        select2.val(selectedValues).trigger('change');
     });
 });
 </script>

@@ -45,3 +45,19 @@ class CreateAccountForm(FlaskForm):
         
         # Load permissions
         self.permissions.choices = [(p.id, p.description) for p in Permission.query.all()]
+
+class ManagePermissionsForm(FlaskForm):
+    user_id = StringField('User ID', validators=[DataRequired()])
+    department = SelectField('Department', coerce=int)
+    permissions = SelectMultipleField('Permissions', coerce=int)
+    
+    def __init__(self, *args, **kwargs):
+        super(ManagePermissionsForm, self).__init__(*args, **kwargs)
+        # Dynamically load departments and permissions
+        from apps.authentication.models import Department, Permission
+        
+        # Load departments
+        self.department.choices = [(0, 'None')] + [(d.id, d.name) for d in Department.query.all()]
+        
+        # Load permissions
+        self.permissions.choices = [(p.id, p.description) for p in Permission.query.all()]
