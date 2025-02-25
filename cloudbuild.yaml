@@ -14,20 +14,22 @@ steps:
       'europe-west6-docker.pkg.dev/agf-lens/lens-repo/lens-dashboard:latest'
     ]
   
-  # Step 3: Deploy the container image to Cloud Run.
+  # Step 3: Deploy the container image to Cloud Run with VPC connector settings.
   - name: 'gcr.io/cloud-builders/gcloud'
     args: [
       'run', 'deploy', 'your-service-name',
       '--image', 'europe-west6-docker.pkg.dev/agf-lens/lens-repo/lens-dashboard:latest',
       '--platform', 'managed',
       '--region', 'europe-west6',
-      '--allow-unauthenticated'
+      '--allow-unauthenticated',
+      '--vpc-connector', '$_VPC_CONNECTOR',
+      '--vpc-egress', 'all-traffic'
     ]
 options:
   logging: CLOUD_LOGGING_ONLY
 
-# Optionally, you can set substitutions for easier reuse.
 substitutions:
   _LOCATION: europe-west6
   _REPO_NAME: lens-repo
   _YOUR_REGION: europe-west6
+  _VPC_CONNECTOR: lens-connector
