@@ -97,8 +97,6 @@ def init_default_data(app):
             
 
 def init_admin_user(app):
-
-    
     with app.app_context():
         try:
             # Check if admin user exists
@@ -210,8 +208,18 @@ def create_app(config):
     app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
     app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER')
     app.config['IT_TEAM_EMAILS'] = os.getenv('IT_TEAM_EMAILS')
-    app.config['CACHE_TYPE'] = 'SimpleCache'  # Use 'RedisCache' for production
-    app.config['CACHE_DEFAULT_TIMEOUT'] = 400  # Cache timeout in seconds (adjust as needed)
+    
+    # Essential session configuration
+    app.config['SESSION_TYPE'] = 'filesystem'  # Use filesystem for session storage
+    app.config['SESSION_PERMANENT'] = True
+    from datetime import timedelta
+    app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=1)
+    app.config['SESSION_USE_SIGNER'] = True
+    
+    # Important Flask-Login configuration
+    app.config['REMEMBER_COOKIE_DURATION'] = timedelta(days=1)
+    app.config['REMEMBER_COOKIE_REFRESH_EACH_REQUEST'] = True
+    app.config['REMEMBER_COOKIE_HTTPONLY'] = True
     
     register_extensions(app)
     register_blueprints(app)

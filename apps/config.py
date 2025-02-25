@@ -47,6 +47,19 @@ class Config(object):
     CACHE_TYPE = 'SimpleCache'
     CACHE_DEFAULT_TIMEOUT = 60 * 60  # 1 hour
 
+    # Add these to your Config class
+    SQLALCHEMY_ENGINE_OPTIONS = {
+    'pool_pre_ping': True,
+    'pool_recycle': 300,  # Recycle connections after 5 minutes
+    'pool_timeout': 10,   # Timeout after 10 seconds
+    'pool_size': 20,      # Increase connection pool size
+    'max_overflow': 30,   # Allow more concurrent connections
+    # These timeouts will make connection errors appear faster
+    'connect_args': {
+        'connect_timeout': 5  # MySQL connection timeout in seconds
+    }
+}
+
 class ProductionConfig(Config):
     DEBUG = False
     

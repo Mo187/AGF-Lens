@@ -11,6 +11,7 @@ from flask_mail import Message
 
 
 import pandas as pd
+import numpy as np
 
 import random, string
 
@@ -46,8 +47,6 @@ from apps.authentication.models import Users, Department, Permission
 fresh_url = os.getenv('fresh_url')
 fresh_key = os.getenv('fresh_key')
 fresh_passw = os.getenv('fresh_passw')
-
-
 
 
 
@@ -133,6 +132,11 @@ def login():
                             form=login_form,
                             msg='System temporarily unavailable. Please try again later.')
 
+
+@blueprint.route('/logout')
+def logout():
+    logout_user()
+    return redirect(url_for('authentication_blueprint.login'))
 
 
 # Admin decorator
@@ -469,6 +473,7 @@ def delete_user():
 
 def insert_data_from_excel(file_path):
     data = pd.read_excel(file_path)
+    data = data.replace({np.nan: None})
     for _, row in data.iterrows():
         inventory_item = Inventory(
             employee_name=row['Employee Name'],
@@ -539,10 +544,6 @@ def delete_inventory(id):
     return redirect(url_for('authentication_blueprint.inventory'))
 
 
-@blueprint.route('/logout')
-def logout():
-    logout_user()
-    return redirect(url_for('authentication_blueprint.login'))
 
 
 

@@ -20,11 +20,16 @@ email_check_lock = Lock()
 scheduler = BackgroundScheduler(timezone=pytz.timezone('Africa/Nairobi'))
 
 def init_login_manager(app):
+    login_manager.init_app(app)
     login_manager.session_protection = "strong"
     login_manager.login_view = 'authentication_blueprint.login'
-    login_manager.login_message = 'Please log in to access this page.'
-    login_manager.login_message_category = 'info'
-    login_manager.init_app(app)
+    login_manager.login_message = None
+    
+    # Add these settings for better login persistence
+    app.config.setdefault('REMEMBER_COOKIE_DURATION', 86400)  # 24 hours
+    app.config.setdefault('REMEMBER_COOKIE_SECURE', False)  # Set to True with HTTPS
+    app.config.setdefault('REMEMBER_COOKIE_HTTPONLY', True)
+    app.config.setdefault('REMEMBER_COOKIE_REFRESH_EACH_REQUEST', True)
 
 # def init_scheduler(app):
 #     try:

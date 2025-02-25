@@ -1,0 +1,28 @@
+
+gcloud compute addresses create lens-static-ip --region=europe-west6
+
+gcloud compute addresses list --filter="name=lens-static-ip"
+
+IP : 34.65.76.195
+
+gcloud compute networks vpc-access connectors create lens-connector \
+  --region=europe-west6 \
+  --network=default \
+  --range=10.8.0.0/28
+
+gcloud compute routers create lens-nat-router \
+  --network=default \
+  --region=europe-west6
+
+gcloud compute routers nat create lens-nat-config \
+  --router=lens-nat-router \
+  --region=europe-west6 \
+  --nat-all-subnet-ip-ranges \
+  --nat-external-ip-pools=lens-static-ip
+
+gcloud run services describe lens-service
+
+gcloud run services update lens-service \
+  --region europe-west6 \
+  --vpc-connector lens-connector \
+  --vpc-egress all-traffic
