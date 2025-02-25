@@ -17,7 +17,7 @@ steps:
   # Step 3: Deploy the container image to Cloud Run with VPC connector settings.
   - name: 'gcr.io/cloud-builders/gcloud'
     args: [
-      'run', 'deploy', 'your-service-name',
+      'run', 'deploy', 'lens-service',
       '--image', 'europe-west6-docker.pkg.dev/agf-lens/lens-repo/lens-dashboard:latest',
       '--platform', 'managed',
       '--region', 'europe-west6',
