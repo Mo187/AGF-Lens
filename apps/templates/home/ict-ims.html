@@ -4,19 +4,16 @@
 
 <!-- Specific Page CSS goes HERE  -->
 {% block stylesheets %}
-<link rel="stylesheet" href="/static/assets/css/stars.css">
+<!-- <link rel="stylesheet" href="/static/assets/css/stars.css"> -->
 
 {% endblock stylesheets %}
 
 {% block content %}
 
-<div id="preloader">
-    <div id="loader"></div>
-  </div>
+
 
 <div class="content" style="background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);">
 
-<div id="stars"></div>
 
 <br>
     <div class="container">
@@ -425,10 +422,6 @@ SweetAlert2Demo.init();
 });
 </script>
 
-<!-- preloader -->
-<script>
-	$(window).on("load",function(){
-	  $("#preloader").fadeOut(1000);
-	});
-</script>
+<script src="/static/assets/js/stars.js" defer></script>
+
 {% endblock javascripts %}

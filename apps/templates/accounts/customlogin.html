@@ -3,8 +3,6 @@
 {% block title %} Login {% endblock %}
 
 {% block content %}
-<div id='stars3'></div>
-<div id='stars'></div>
 
 <div class="auth-wrapper">
 
@@ -32,7 +30,25 @@
                 </span>
 
                 <form role="form" method="post" action="">
-
+                    <style>
+                        /* Make placeholder text white with proper opacity */
+                        .input-group-modern .form-control::placeholder {
+                            color: rgba(255, 255, 255, 0.7) !important;
+                        }
+                        
+                        .input-group-modern .form-control {
+                            color: white !important;
+                        }
+                        
+                        /* Fix autofill background */
+                        .input-group-modern .form-control:-webkit-autofill,
+                        .input-group-modern .form-control:-webkit-autofill:hover,
+                        .input-group-modern .form-control:-webkit-autofill:focus {
+                            -webkit-box-shadow: 0 0 0px 1000px rgba(0, 0, 0, 0.3) inset !important;
+                            -webkit-text-fill-color: white !important;
+                            transition: background-color 5000s ease-in-out 0s;
+                        }
+                    </style>
                     {{ form.hidden_tag() }}
 
                     <!-- Modern input group styling -->
@@ -66,5 +82,6 @@
         </div>
     </div>
 </div>
+
 
 {% endblock content %}

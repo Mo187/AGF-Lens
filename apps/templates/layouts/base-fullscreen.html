@@ -36,6 +36,15 @@
     {% block stylesheets %}
 
     <style>
+
+        ::placeholder {
+            color: red;
+            opacity: 1; /* Firefox */
+          }
+          
+          ::-ms-input-placeholder { /* Edge 12 -18 */
+            color: red;
+          }   
         /* White pulse border effect for the card */
 .pulse-border {
     border: 1px solid transparent;
@@ -91,12 +100,15 @@
 
     <!-- Specific Page JS goes HERE  -->
     {% block javascripts %}
-<!-- <script src="/static/assets/js/vendor-all.min.js"></script>
+
+<script src="/static/assets/js/vendor-all.min.js"></script>
 <script src="/static/assets/js/bootstrap.min.js"></script>
-<script src="/static/assets/js/pcoded.min.js"></script>
+<script src="/static/assets/js/preloader.js"></script>
+<!-- <script src="/static/assets/js/pcoded.min.js"></script>
 <script src="/static/assets/js/dark-mode.js"></script>
 <script src="/static/assets/js/scrolling.min.js"></script> -->
 
+<script src="/static/assets/js/stars.js" defer></script>
 
     {% endblock javascripts %}    
 

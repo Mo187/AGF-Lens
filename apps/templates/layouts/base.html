@@ -45,6 +45,10 @@
 </head>
 <body data-background-color="dark">
     
+	<div id="preloader">
+		<div id="loader"></div>
+	  </div>
+	
 	
 	<div class="wrapper">
 
@@ -72,6 +76,7 @@
 
 	{% include 'includes/scripts.html' %}
 	<script src="/static/assets/js/weathertime.js"></script>
+	<script src="/static/assets/js/preloader.js"></script>
 
 
     <!-- Specific Page JS goes HERE  -->
@@ -79,6 +84,7 @@
 	<script src="/static/assets/js/licenses.js"></script>
 
 	{% endblock javascripts %}
+
 
 </body>
 </html>

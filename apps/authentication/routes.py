@@ -9,18 +9,17 @@ from flask_login import (
 from flask import current_app
 from flask_mail import Message
 
+from sqlalchemy.orm import joinedload
 
 import pandas as pd
 import numpy as np
 
 import random, string
 
-from apps.authentication.util import hash_pass
 
 import logging
 from datetime import date
 from apps import cache
-from functools import lru_cache
 
 import concurrent.futures
 from functools import wraps
@@ -28,7 +27,7 @@ from functools import wraps
 from apps.extensions import db, login_manager
 
 from apps.authentication import blueprint
-from apps.authentication.forms import LoginForm, CreateAccountForm
+from apps.authentication.forms import LoginForm
 from apps.authentication.models import Users, Inventory, Permission
 
 from apps.authentication.util import verify_pass
@@ -37,9 +36,11 @@ import requests
 import math
 
 ## Local imports from Functions.py (Bitdefenfer, freshdesk etc...)
-from api.functions import get_company_details, get_endpoints_list, get_network_inventory_items, create_report, process_ticket, get_requesters, get_ticket_volume_over_time, get_ticket_status_distribution, get_average_resolution_time, get_agent_data
-from functions.licenses import send_email_reminder
-from apps.authentication.models import License, EmailLog, Category
+from api.functions import process_ticket, get_requesters, get_ticket_volume_over_time, get_ticket_status_distribution, get_average_resolution_time, get_agent_data
+from api.async_functions import get_company_details, get_endpoints_list, get_network_inventory_items
+
+from api.licenses import send_email_reminder
+from apps.authentication.models import License, Category
 from apps.extensions import mail
 from apps.authentication.models import Users, Department, Permission
 
@@ -96,46 +97,51 @@ def check_ip():
 def login():
     login_form = LoginForm(request.form)
     
-    try:
-        if 'login' in request.form:
-            try:
-                email = request.form['email']
-                password = request.form['password']
-                # Locate user by email
-                user = Users.query.filter_by(email=email).first()
-                # Check the password
-                if user and verify_pass(password, user.password):
-                    login_user(user)
-                    # Check if password change is required
-                    if user.force_password_change:
-                        flash('Please change your password.', 'warning')
-                        return redirect(url_for('authentication_blueprint.change_password'))
-                    return redirect(url_for('authentication_blueprint.route_default'))
-                return render_template('accounts/customlogin.html',
-                                    msg='Wrong email or password',
-                                    form=login_form)
-            except Exception as e:
-                print(f"Database error during login attempt: {e}")
-                return render_template('accounts/customlogin.html',
-                                    msg='Unable to process login. Please try again.',
-                                    form=login_form)
+    # Only process form if it's a POST request
+    if request.method == 'POST' and 'login' in request.form:
+        email = request.form['email']
+        password = request.form['password']
         
-        if not current_user.is_authenticated:
-            return render_template('accounts/customlogin.html',
-                                form=login_form)
-        return redirect(url_for('home_blueprint.index'))
-    
-    except Exception as e:
-        print(f"Critical login page error: {e}")
-        # Ensure login page is always accessible
+        # Locate user by email - use a single database query
+        user = Users.query.filter_by(email=email).first()
+        
+        # Check password only if user exists
+        if user and verify_pass(password, user.password):
+            if not user.is_active:
+                return render_template('accounts/customlogin.html',
+                                     msg='This account is inactive. Please contact an administrator.',
+                                     form=login_form)
+                                     
+            # Login the user - pass remember=True to keep them logged in
+            login_user(user, remember=True)
+            
+            # Check if password change is required
+            if user.force_password_change:
+                flash('Please change your password.', 'warning')
+                return redirect(url_for('authentication_blueprint.change_password'))
+                
+            # Redirect to homepage
+            return redirect(url_for('home_blueprint.index'))
+            
+        # Invalid credentials
         return render_template('accounts/customlogin.html',
-                            form=login_form,
-                            msg='System temporarily unavailable. Please try again later.')
+                             msg='Invalid email or password',
+                             form=login_form)
+    
+    # GET request - just show the form if not logged in
+    if not current_user.is_authenticated:
+        return render_template('accounts/customlogin.html', form=login_form)
+        
+    # Already logged in - redirect to homepage
+    return redirect(url_for('home_blueprint.index'))
 
 
 @blueprint.route('/logout')
 def logout():
-    logout_user()
+    # Simply log the user out, don't redirect until it's complete
+    if current_user.is_authenticated:
+        logout_user()
+    # Then redirect
     return redirect(url_for('authentication_blueprint.login'))
 
 
@@ -548,7 +554,8 @@ def delete_inventory(id):
 
 
 
-# # # # # # # # # # APIs for Dashboards
+###################### APIs FOR BITDEFENDER ###################
+###################################################################
 
 def fetch_inventory_page(parent_id, page, per_page, filters, options):
     """Fetch a single page of inventory"""
@@ -843,19 +850,29 @@ def test_email(license_id, interval):
 @login_required
 def handle_categories():
     if request.method == 'GET':
-        categories = Category.query.all()
+        # Use eager loading to get all categories with their licenses in one query
+        categories = Category.query.options(joinedload(Category.licenses)).all()
+        
         result = []
         for cat in categories:
-            total = len(cat.licenses)
-            active_count = sum(1 for lic in cat.licenses if lic.computed_status.lower() == 'active')
-            expiring_count = sum(1 for lic in cat.licenses if lic.computed_status.lower() == 'expiring soon')
-            expired_count = sum(1 for lic in cat.licenses if lic.computed_status.lower() == 'expired')
+            # Process in memory instead of multiple queries
+            licenses = list(cat.licenses)  # Force evaluation
+            total = len(licenses)
+            
+            # Calculate counts in a single pass
+            counts = {"active": 0, "expiring soon": 0, "expired": 0}
+            for lic in licenses:
+                status = lic.computed_status.lower()
+                if status in counts:
+                    counts[status] += 1
+            
             cat_dict = cat.to_dict()
             cat_dict['total'] = total
-            cat_dict['active'] = active_count
-            cat_dict['expiring'] = expiring_count
-            cat_dict['expired'] = expired_count
+            cat_dict['active'] = counts["active"]
+            cat_dict['expiring'] = counts["expiring soon"]
+            cat_dict['expired'] = counts["expired"]
             result.append(cat_dict)
+            
         return jsonify(result), 200
 
     elif request.method == 'POST':

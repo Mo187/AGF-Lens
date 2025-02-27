@@ -1,5 +1,6 @@
 
 import os
+from datetime import timedelta
 from flask import Flask
 from importlib import import_module
 from flask_caching import Cache
@@ -212,7 +213,6 @@ def create_app(config):
     # Essential session configuration
     app.config['SESSION_TYPE'] = 'filesystem'  # Use filesystem for session storage
     app.config['SESSION_PERMANENT'] = True
-    from datetime import timedelta
     app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=1)
     app.config['SESSION_USE_SIGNER'] = True
     
@@ -224,18 +224,20 @@ def create_app(config):
     register_extensions(app)
     register_blueprints(app)
     
-    try:
-        configure_database(app)
-    except Exception as e:
-        print(f"> Database setup error (app will continue): {e}")
+    # try:
+    #     configure_database(app)
+    # except Exception as e:
+    #     print(f"> Database setup error (app will continue): {e}")
     
-    # Try to initialize data but don't let failures stop the app
-    try:
-        with app.app_context():
-            init_default_data(app) ## creating default departments and perms
-            init_admin_user(app) ## for creating admin automatically
-    except Exception as e:
-        print(f"> Data initialization error (app will continue): {e}")
+    # # Try to initialize data but don't let failures stop the app
+    # try:
+    #     with app.app_context():
+    #         init_default_data(app) ## creating default departments and perms
+    #         init_admin_user(app) ## for creating admin automatically
+    # except Exception as e:
+    #     print(f"> Data initialization error (app will continue): {e}")
+    
+    configure_database(app)
             
     return app
 

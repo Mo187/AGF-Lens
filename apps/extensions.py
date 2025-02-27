@@ -58,7 +58,7 @@ def init_scheduler(app):
     try:
         def scheduled_license_check():
             with app.app_context():
-                from functions.licenses import check_license_expirations
+                from api.licenses import check_license_expirations
                 check_license_expirations()
         
         if not scheduler.running:

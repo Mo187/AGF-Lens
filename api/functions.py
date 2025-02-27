@@ -4,129 +4,131 @@ import base64
 import requests
 from datetime import datetime, timedelta
 from collections import defaultdict
+from functools import lru_cache
 
 #local imports
 from apps import cache
 
-# Bitdefender API credentials
-API_key = os.getenv('API_KEY')
-BASE_url = os.getenv('BASE_URL')
+# # Bitdefender API credentials
+# API_key = os.getenv('API_KEY')
+# BASE_url = os.getenv('BASE_URL')
 
 
-def get_auth_header():
-    auth_string = f'{API_key}:'
-    auth_bytes = auth_string.encode('ascii')
-    auth_base64 = base64.b64encode(auth_bytes).decode('ascii')
-    return {'Authorization': f'Basic {auth_base64}', 'Content-Type': 'application/json'}
+# @lru_cache(maxsize=1)
+# def get_auth_header():
+#     auth_string = f'{API_key}:'
+#     auth_bytes = auth_string.encode('ascii')
+#     auth_base64 = base64.b64encode(auth_bytes).decode('ascii')
+#     return {'Authorization': f'Basic {auth_base64}', 'Content-Type': 'application/json'}
 
 
 
-def get_company_details(company_id=None):
-    payload = {
-        "jsonrpc": "2.0",
-        "method": "getCompanyDetails",
-        "params": {},
-        "id": "1"
-    }
-    if company_id is not None:
-        payload['params']['companyId'] = company_id
+# def get_company_details(company_id=None):
+#     payload = {
+#         "jsonrpc": "2.0",
+#         "method": "getCompanyDetails",
+#         "params": {},
+#         "id": "1"
+#     }
+#     if company_id is not None:
+#         payload['params']['companyId'] = company_id
     
-    try:
-        response = requests.post(BASE_url + 'companies', json=payload, headers=get_auth_header())
-        response.raise_for_status()
-        return response.json().get('result')
-    except requests.exceptions.RequestException as e:
+#     try:
+#         response = requests.post(BASE_url + 'companies', json=payload, headers=get_auth_header())
+#         response.raise_for_status()
+#         return response.json().get('result')
+#     except requests.exceptions.RequestException as e:
 
-        return None
+#         return None
 
 
-def get_endpoints_list(parent_id=None, is_managed=None, per_page=100, filters=None, options=None):
-    all_endpoints = []
-    page = 1
+# def get_endpoints_list(parent_id=None, is_managed=None, per_page=100, filters=None, options=None):
+#     all_endpoints = []
+#     page = 1
     
-    while True:
-        params = {
-            "parentId": parent_id,
-            "isManaged": is_managed,
-            "page": page,
-            "perPage": per_page
-        }
+#     while True:
+#         params = {
+#             "parentId": parent_id,
+#             "isManaged": is_managed,
+#             "page": page,
+#             "perPage": per_page
+#         }
         
-        if filters is not None:
-            params["filters"] = filters
-        if options is not None:
-            params["options"] = options
+#         if filters is not None:
+#             params["filters"] = filters
+#         if options is not None:
+#             params["options"] = options
         
-        payload = {
-            "jsonrpc": "2.0",
-            "method": "getEndpointsList",
-            "params": params,
-            "id": "1"
-        }
+#         payload = {
+#             "jsonrpc": "2.0",
+#             "method": "getEndpointsList",
+#             "params": params,
+#             "id": "1"
+#         }
 
-        try:
-            response = requests.post(BASE_url + 'network', json=payload, headers=get_auth_header())
-            response.raise_for_status()
-            result = response.json().get('result')
-            if not result or 'items' not in result or not result['items']:
-                break
-            all_endpoints.extend(result['items'])
-            if len(result['items']) < per_page:
-                break
-            page += 1
-        except requests.exceptions.RequestException as e:
-            return None
+#         try:
+#             response = requests.post(BASE_url + 'network', json=payload, headers=get_auth_header())
+#             response.raise_for_status()
+#             result = response.json().get('result')
+#             if not result or 'items' not in result or not result['items']:
+#                 break
+#             all_endpoints.extend(result['items'])
+#             if len(result['items']) < per_page:
+#                 break
+#             page += 1
+#         except requests.exceptions.RequestException as e:
+#             return None
 
-    return all_endpoints
+#     return all_endpoints
 
 
-def create_report(name, report_type, target_ids, scheduled_info=None, options=None, emails_list=None):
-    payload = {
-        "jsonrpc": "2.0",
-        "method": "createReport",
-        "params": {
-            "name": name,
-            "type": report_type,
-            "targetIds": target_ids,
-            "scheduledInfo": scheduled_info,
-            "options": options,
-            "emailsList": emails_list
-        },
-        "id": "1"
-    }
-    try:
-        response = requests.post(BASE_url + 'reports', json=payload, headers=get_auth_header())
-        response.raise_for_status()
-        return response.json().get('result')
-    except requests.exceptions.RequestException as e:
-        return None
+# def create_report(name, report_type, target_ids, scheduled_info=None, options=None, emails_list=None):
+#     payload = {
+#         "jsonrpc": "2.0",
+#         "method": "createReport",
+#         "params": {
+#             "name": name,
+#             "type": report_type,
+#             "targetIds": target_ids,
+#             "scheduledInfo": scheduled_info,
+#             "options": options,
+#             "emailsList": emails_list
+#         },
+#         "id": "1"
+#     }
+#     try:
+#         response = requests.post(BASE_url + 'reports', json=payload, headers=get_auth_header())
+#         response.raise_for_status()
+#         return response.json().get('result')
+#     except requests.exceptions.RequestException as e:
+#         return None
     
     
-def get_network_inventory_items(parent_id=None, page=1, per_page=100, filters=None, options=None):
-    params = {
-        "parentId": parent_id,
-        "page": page,
-        "perPage": per_page,
-    }
+# def get_network_inventory_items(parent_id=None, page=1, per_page=100, filters=None, options=None):
+#     params = {
+#         "parentId": parent_id,
+#         "page": page,
+#         "perPage": per_page,
+#     }
 
-    if filters is not None:
-        params["filters"] = filters
-    if options is not None:
-        params["options"] = options
+#     if filters is not None:
+#         params["filters"] = filters
+#     if options is not None:
+#         params["options"] = options
 
-    payload = {
-        "jsonrpc": "2.0",
-        "method": "getNetworkInventoryItems",
-        "params": params,
-        "id": "1"
-    }
+#     payload = {
+#         "jsonrpc": "2.0",
+#         "method": "getNetworkInventoryItems",
+#         "params": params,
+#         "id": "1"
+#     }
 
-    try:
-        response = requests.post(BASE_url + 'network', json=payload, headers=get_auth_header())
-        response.raise_for_status()
-        return response.json().get('result')
-    except requests.exceptions.RequestException as e:
-        return None
+#     try:
+#         response = requests.post(BASE_url + 'network', json=payload, headers=get_auth_header())
+#         response.raise_for_status()
+#         return response.json().get('result')
+#     except requests.exceptions.RequestException as e:
+#         return None
 
 
 ## Freshdesk Functions ##########################################################################################################################################
@@ -172,7 +174,7 @@ def format_datetime(dt_str):
     dt = datetime.strptime(dt_str, '%Y-%m-%dT%H:%M:%SZ')
     return dt.strftime('%Y-%m-%d %H:%M:%S')
 
-@cache.cached(timeout=300, key_prefix='cached_agent_data')
+@cache.cached(timeout=2000, key_prefix='cached_agent_data')
 def get_agent_data(session):
     agents_response = session.get(f"{fresh_url}agents", auth=(fresh_key, fresh_passw))
     agents_response.raise_for_status()
@@ -320,7 +322,7 @@ def get_ticket_status_distribution(session):
 
     return statuses, counts
 
-@cache.cached(timeout=300, key_prefix='ticket_volume_over_time')
+@cache.memoize(timeout=300)
 def get_ticket_volume_over_time(session):
     # Define time range
     days_back = 30  # Adjust as needed

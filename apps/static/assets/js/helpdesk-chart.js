@@ -125,10 +125,10 @@ function initTicketStatusChart() {
         },
         options: {
             responsive: true,
-            maintainAspectRatio: false,
+            maintainAspectRatio: true,
             layout: {
                 padding: {
-                    bottom: 100  // Add padding for legend
+                    bottom: 20  // Add padding for legend
                 }
             },
             plugins: {

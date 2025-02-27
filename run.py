@@ -37,4 +37,4 @@ if __name__ == "__main__":
             print("Database tables created successfully")
         except Exception as e:
             print(f"Error creating database tables: {e}")
-    app.run(host='0.0.0.0', port=8080)
+    app.run(host='0.0.0.0', port=8080, threaded=True)

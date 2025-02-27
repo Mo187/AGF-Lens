@@ -4,7 +4,6 @@
 
 <!-- Specific Page CSS goes HERE  -->
 {% block stylesheets %}
-<link rel="stylesheet" href="/static/assets/css/stars.css">
 <link rel="stylesheet" href="/static/assets/css/charts.css">
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -15,13 +14,9 @@
 
 
 {% block content %}
-<div id="preloader">
-	<div id="loader"></div>
-  </div>
 
 <div class="content" style="background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);">
 
-	<div id='stars'></div>
 	<br>
 	
 	
@@ -232,12 +227,6 @@
         }
 </script>
 
-<!-- preloader -->
-<script>
-	$(window).on("load",function(){
-	  $("#preloader").fadeOut(1000);
-	});
-</script>
 
 
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
@@ -247,5 +236,6 @@
 
 <!-- Local scripts -->
 <script src="/static/assets/js/bitdefender.js"></script>
+
 
 {% endblock javascripts %}

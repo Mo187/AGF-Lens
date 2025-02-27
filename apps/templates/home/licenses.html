@@ -42,9 +42,85 @@ thead {
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
+
+ /* Table row hover effect */
+ .table-hover tbody tr {
+  transition: all 0.2s ease;
+}
+.table-hover tbody tr:hover {
+  background-color: rgba(13, 110, 253, 0.05);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+/* Badge styling */
+.badge {
+  padding: 0.5em 0.75em;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+
+/* Card styling */
+.card {
+  transition: all 0.3s ease;
+  border: none;
+}
+
+/* Smooth transitions */
+.form-select, .btn {
+  transition: all 0.2s ease;
+}
+
+/* Primary gradient background */
+.bg-gradient-primary {
+  background: linear-gradient(135deg, #1a237e, #0d47a1);
+}
+
+/* Empty state animation */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+#emptyState {
+  animation: fadeIn 0.4s ease-out;
+}
+
+/* Improved table spacing */
+.table td {
+  padding: 1rem 1.25rem;
+  vertical-align: middle;
+}
+
+/* Action buttons styling */
+.btn-outline-primary, .btn-outline-danger {
+  border-width: 1.5px;
+}
+
+/* Filter inputs styling */
+.input-group-text {
+  border-right: none;
+}
+
+/* Add subtle stripe to table */
+.table tbody tr:nth-of-type(odd) {
+  background-color: rgba(0, 0, 0, 0.01);
+}
+
+ /* Improved icon spacing in table headers */
+ .icon-container {
+  width: 20px;
+  text-align: center;
+  margin-right: 1rem !important;
+}
+
+/* Make the icons slightly lighter for a subtle appearance */
+thead .icon-container i {
+  opacity: 0.8;
+}
+
 </style>
 
-<link rel="stylesheet" href="/static/assets/css/stars.css">
 
 <!-- Bootstrap CSS -->
 <!-- Bootstrap Bundle JS (includes Popper) -->
@@ -56,15 +132,10 @@ thead {
 
 <div class="content">
 
-  <!-- Preloader -->
-  <div id="preloader">
-    <div id="loader"></div>
-  </div>
-
+  
   <br>
 
   <!-- Stars animation -->
-	<div id='stars'></div>
 
   <div class="container">
     <div class="page-header">
@@ -98,7 +169,7 @@ thead {
             <span class="fw-mediumbold" id="modalAction">Add</span>
             <span class="fw-light">License</span>
           </h5>
-          <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close" onclick="resetLicenseForm()">
+          <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
             <span aria-hidden="true">&times;</span>
           </button>
         </div>
@@ -118,9 +189,7 @@ thead {
                 <label>Category</label>
                 <select id="licenseCategory" name="licenseCategory" required class="form-control">
                   <option value="" disabled selected>Select Category</option>
-                  <option value="M365">M365</option>
-                  <option value="Bitdefender">Bitdefender</option>
-                  <option value="Printers">Printers</option>
+                  <!-- Categories will be loaded dynamically by JavaScript -->
                 </select>
                 <div class="invalid-feedback">Please select a category.</div>
               </div>
@@ -148,14 +217,14 @@ thead {
             <div class="col-md-6">
               <div class="form-group form-group-default">
                 <label>Expiry Date</label>
-                <input id="expiryDate" name="expiryDate" type="date" required class="form-control" />
+                <input id="expiryDate" name="expiryDate" type="date" class="form-control" />
                 <div class="invalid-feedback">Please select an expiry date.</div>
               </div>
             </div>
           </div>
         </div>
         <div class="modal-footer no-bd">
-          <button type="button" class="btn btn-danger btn-sm" data-bs-dismiss="modal" onclick="resetLicenseForm()">Close</button>
+          <button type="button" class="btn btn-danger btn-sm" data-bs-dismiss="modal">Close</button>
           <button type="submit" class="btn btn-primary btn-sm" id="licenseSubmitBtn">Save</button>
         </div>
       </form>
@@ -164,7 +233,7 @@ thead {
 </div>
 
 
-  <div class="panel-header shadow-lg rounded" style="background: linear-gradient(135deg, #000000, #074e6e);">
+  <div class="panel-header shadow-lg rounded" style="background: linear-gradient(135deg, #000000, #ffffff45);">
     <div class="page-inner py-2">
       <br>
       <div class="d-flex align-items-left align-items-md-center flex-column flex-md-row">
@@ -195,7 +264,7 @@ thead {
     <div class="row mb-4">
       <div class="col-md-4 mb-3">
         <div class="stats-card card border-start border-4 border-primary h-100"
-          style="background: linear-gradient( #0e1925 0%, #10afb460 100%);">
+          style="background: linear-gradient( #0e1925 0%, #10b46560 100%);">
           <div class="card-body d-flex justify-content-between align-items-center p-4">
             <div>
               <p class="text-muted mb-1">Total Licenses</p>
@@ -245,101 +314,164 @@ thead {
     </div>
 
 <!-- Categories, Filters & License Overview Table -->
-<section class="mb-4">
-  <!-- Header & Filters -->
-  <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between text-white p-3 rounded-top shadow" style="background: linear-gradient( #0e19256b 0%, #0601131e 100%);">
-    <h2 class="h5 mb-0">License Overview</h2>
-    <div class="mt-3 mt-md-0 d-flex flex-wrap gap-3">
-      <select id="filterCategory" class="form-select form-select-sm" style="min-width: 150px;">
-        <option value="">All Categories</option>
-        <!-- Options loaded dynamically -->
-      </select>
-      <select id="filterType" class="form-select form-select-sm" style="min-width: 150px;">
-        <option value="">All Types</option>
-        <option value="Subscription">Subscription</option>
-        <option value="Annual">Annual</option>
-        <option value="Perpetual">Perpetual</option>
-      </select>
-      <select id="filterStatus" class="form-select form-select-sm" style="min-width: 150px;">
-        <option value="">All Statuses</option>
-        <option value="Active">Active</option>
-        <option value="Expiring Soon">Expiring Soon</option>
-        <option value="Expired">Expired</option>
-        <option value="Perpetual">Perpetual</option>
-      </select>
-      <button id="addCategoryBtn" class="btn btn-outline-info btn-sm">Add Category</button>
+<section class="license-overview mb-5">
+  <!-- Card Container -->
+  <div class="card shadow-lg border-0 rounded-lg overflow-hidden">
+    <!-- Header -->
+    <div class="card-header p-0">
+      <div class="bg-gradient-primary text-white p-4" style="background: linear-gradient(135deg, #1a237e, #0d47a1);">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+          <div class="mb-3 mb-md-0">
+            <h2 class="h4 mb-1 font-weight-bold">License Overview</h2>
+            <p class="mb-0 opacity-75">Manage your licenses and view their status</p>
+          </div>
+          <button id="addCategoryBtn" class="btn btn-light btn-sm d-flex align-items-center gap-2">
+            <i class="fas fa-folder-plus me-1"></i>
+            Add Category
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="card-body bg-black p-4 border-bottom">
+      <div class="row g-3">
+        <div class="col-md-4">
+          <div class="form-group">
+            <label for="filterCategory" class="form-label fw-semibold small mb-1">Category</label>
+            <div class="input-group">
+              <span class="input-group-text bg-white border-end-0">
+                <i class="fas fa-tag text-primary"></i>
+              </span>
+              <select id="filterCategory" class="form-select border-start-0" style="border-radius: 0 4px 4px 0;">
+                <option value="">All Categories</option>
+                <!-- Options loaded dynamically -->
+              </select>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-md-4">
+          <div class="form-group">
+            <label for="filterType" class="form-label fw-semibold small mb-1">License Type</label>
+            <div class="input-group">
+              <span class="input-group-text bg-white border-end-0">
+                <i class="fas fa-cube text-primary"></i>
+              </span>
+              <select id="filterType" class="form-select border-start-0" style="border-radius: 0 4px 4px 0;">
+                <option value="">All Types</option>
+                <option value="Subscription">Subscription</option>
+                <option value="Annual">Annual</option>
+                <option value="Perpetual">Perpetual</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-md-4">
+          <div class="form-group">
+            <label for="filterStatus" class="form-label fw-semibold small mb-1">Status</label>
+            <div class="input-group">
+              <span class="input-group-text bg-white border-end-0">
+                <i class="fas fa-circle-check text-primary"></i>
+              </span>
+              <select id="filterStatus" class="form-select border-start-0" style="border-radius: 0 4px 4px 0;">
+                <option value="">All Statuses</option>
+                <option value="Active">Active</option>
+                <option value="Expiring Soon">Expiring Soon</option>
+                <option value="Expired">Expired</option>
+                <option value="Perpetual">Perpetual</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+  <!-- Table -->
+<div class="card shadow-sm">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover table-striped align-middle mb-0">
+        <thead>
+          <tr class="bg-light text-primary">
+            <th class="px-4 py-3 border-0">
+              <div class="d-flex align-items-center">
+                <div class="icon-container mr-4" style="width: 20px; text-align: center;">
+                  <i class="fas fa-key"></i>
+                </div>
+                <span>License Name</span>
+              </div>
+            </th>
+            <th class="px-4 py-3 border-0">
+              <div class="d-flex align-items-center">
+                <div class="icon-container mr-4" style="width: 20px; text-align: center;">
+                  <i class="fas fa-tag"></i>
+                </div>
+                <span>Category</span>
+              </div>
+            </th>
+            <th class="px-4 py-3 border-0">
+              <div class="d-flex align-items-center">
+                <div class="icon-container mr-4" style="width: 20px; text-align: center;">
+                  <i class="fas fa-cube"></i>
+                </div>
+                <span>Type</span>
+              </div>
+            </th>
+            <th class="px-4 py-3 border-0">
+              <div class="d-flex align-items-center">
+                <div class="icon-container mr-4" style="width: 20px; text-align: center;">
+                  <i class="fas fa-user"></i>
+                </div>
+                <span>Assigned To</span>
+              </div>
+            </th>
+            <th class="px-4 py-3 border-0">
+              <div class="d-flex align-items-center">
+                <div class="icon-container mr-4" style="width: 20px; text-align: center;">
+                  <i class="fas fa-calendar"></i>
+                </div>
+                <span>Expiry Date</span>
+              </div>
+            </th>
+            <th class="px-4 py-3 border-0">
+              <div class="d-flex align-items-center">
+                <div class="icon-container mr-4" style="width: 20px; text-align: center;">
+                  <i class="fas fa-circle-check"></i>
+                </div>
+                <span>Status</span>
+              </div>
+            </th>
+            <th class="px-4 py-3 border-0 text-center" style="min-width: 140px;">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="licensesTableBody" class="border-top">
+          <!-- License rows inserted dynamically -->
+        </tbody>
+      </table>
     </div>
   </div>
+</div>
 
-  <!-- License Overview Table Card -->
-  <div class="card shadow mt-4"> <!-- Added margin-top here -->
-    <div class="card-body p-3">
-      <div class="table-responsive">
-        <table class="table align-middle">
-          <thead style="background: linear-gradient(45deg, #1a237e, #283593)"> <!-- Changed background -->
-            <tr>
-              <th scope="col" class="px-4 py-4 border-0 text-white"> <!-- Increased padding and changed text color -->
-                <div class="d-flex align-items-center">
-                  <div class="icon-container me-3"> <!-- Added container for icon -->
-                    <i class="fas fa-key fa-lg"></i> <!-- Increased icon size -->
-                  </div>
-                  <span class="fs-6">License Name</span> <!-- Increased text size -->
-                </div>
-              </th>
-              <th scope="col" class="px-4 py-4 border-0 text-white">
-                <div class="d-flex align-items-center">
-                  <div class="icon-container me-3">
-                    <i class="fas fa-tag fa-lg"></i>
-                  </div>
-                  <span class="fs-6">Category</span>
-                </div>
-              </th>
-              <th scope="col" class="px-4 py-4 border-0 text-white">
-                <div class="d-flex align-items-center">
-                  <div class="icon-container me-3">
-                    <i class="fas fa-cube fa-lg"></i>
-                  </div>
-                  <span class="fs-6">Type</span>
-                </div>
-              </th>
-              <th scope="col" class="px-4 py-4 border-0 text-white">
-                <div class="d-flex align-items-center">
-                  <div class="icon-container me-3">
-                    <i class="fas fa-user fa-lg"></i>
-                  </div>
-                  <span class="fs-6">Assigned To</span>
-                </div>
-              </th>
-              <th scope="col" class="px-4 py-4 border-0 text-white">
-                <div class="d-flex align-items-center">
-                  <div class="icon-container me-3">
-                    <i class="fas fa-calendar fa-lg"></i>
-                  </div>
-                  <span class="fs-6">Expiry Date</span>
-                </div>
-              </th>
-              <th scope="col" class="px-4 py-4 border-0 text-white">
-                <div class="d-flex align-items-center">
-                  <div class="icon-container me-3">
-                    <i class="fas fa-circle-check fa-lg"></i>
-                  </div>
-                  <span class="fs-6">Status</span>
-                </div>
-              </th>
-              <th scope="col" class="px-4 py-4 border-0 text-white" style="min-width: 140px;">
-                <span class="fs-6">Actions</span>
-              </th>
-            </tr>
-          </thead>
-          <tbody id="licensesTableBody" class="small">
-            <!-- License rows inserted dynamically -->
-          </tbody>
-        </table>
+      
+      <!-- Empty State (shown when no licenses) -->
+      <div id="emptyState" class="text-center py-5 d-none">
+        <div class="py-5">
+          <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
+          <h5 class="text-muted">No licenses found</h5>
+          <p class="text-muted">Try changing your filters or add a new license</p>
+          <button class="btn btn-primary btn-sm mt-2" data-bs-toggle="modal" data-bs-target="#addLicenseModal">
+            <i class="fas fa-plus me-1"></i> Add License
+          </button>
+        </div>
       </div>
-
-      <!-- Pagination Controls -->
+    </div>
+    
+    <!-- Pagination Footer -->
+    <div class="card-footer border-0 py-3">
       <nav aria-label="License Table Pagination">
-        <ul id="paginationControls" class="pagination justify-content-center mt-3">
+        <ul id="paginationControls" class="pagination pagination-sm justify-content-center mb-0">
           <!-- Pagination items built dynamically -->
         </ul>
       </nav>
@@ -370,14 +502,11 @@ thead {
 {% endblock content %}
 
 {% block javascripts %}
-<script>
-  $(window).on("load", function () {
-    $("#preloader").fadeOut(1000);
-  });
-</script>
 
 <!-- Bootstrap Bundle JS (includes Popper) -->
 <!-- Your custom JS -->
 <script src="/static/assets/js/licenses.js"></script>
+
+<script src="/static/assets/js/stars.js" defer></script>
 
 {% endblock javascripts %}

@@ -3,33 +3,32 @@
 {% block title %} Dashboard {% endblock %}
 
 {% block stylesheets %}
-<link rel="stylesheet" href="/static/assets/css/stars.css">
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
 
 <style>
-   
-
     @keyframes spin {
         to { transform: rotate(360deg); }
     }
-
 
     @keyframes pulse {
         0% { opacity: 0.6; }
         50% { opacity: 1; }
         100% { opacity: 0.6; }
     }
-
 </style>
 <style>
-    #ticketStatusChart {
-        min-height: 600px !important;  /* Made much bigger */
-    }
-    
+  
     .chart-container {
         position: relative;
         height: 400px !important;  /* Made much bigger */
         width: 100%;
+        margin: auto;
+    }
+    
+    .chart-status-container {
+        position: relative;
+        height: 100%;  /* Made much bigger */
+        width: 500px;
         margin: auto;
     }
     
@@ -42,9 +41,7 @@
 
 {% block content %}
 <div class="content">
-    <div id="preloader">
-        <div id="loader"></div>
-    </div>
+  
     <br>
 
     <!-- General Stats Section -->
@@ -134,10 +131,10 @@
         </div>
 
         <!-- Status Chart -->
-        <div style="max-width: 500px; margin: auto;">
+        <div style="margin: auto;">
             <!-- <div class="card-title content-center">Tickets in the last 30 days</div> -->
             <br>
-            <div class="chart-container">
+            <div class="chart-status-container">
                 <div class="loading-overlay" id="status-chart-loader">
                     <div class="loading-spinner"></div>
                 </div>
@@ -192,6 +189,7 @@
                 </div>
             </div>
         </div>
+        
     </div>
 </div>
 {% endblock content %}
