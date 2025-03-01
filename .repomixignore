@@ -4,3 +4,10 @@ fonts/
 sass/
 img/
 font/
+fonts.css,
+vendor-all.min.js
+fonts.min.css
+atlantis.css.map
+tailwind.js
+atlantis.css
+atlantis.min.css
