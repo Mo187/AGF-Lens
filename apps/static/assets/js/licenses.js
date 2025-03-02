@@ -8,6 +8,23 @@ const dataCache = {
     lastLicensesFetch: 0
 };
 
+
+// Spinner functions
+function showSpinner() {
+    const spinner = document.getElementById('spinnerOverlay');
+    if (spinner) {
+        spinner.classList.remove('d-none');
+    }
+}
+
+function hideSpinner() {
+    const spinner = document.getElementById('spinnerOverlay');
+    if (spinner) {
+        spinner.classList.add('d-none');
+    }
+}
+
+
 // Helper function to fetch data only if needed (with cache timeout)
 async function fetchWithCache(url, cacheKey, cacheTimeKey, cacheTimeoutMs = 10000) {
     const now = Date.now();
@@ -141,12 +158,16 @@ async function deleteCategory(id, name) {
     }
 }
 
-// Reset the license form when closing the modal
+// Update the reset form function
 function resetLicenseForm() {
     const form = document.getElementById('addLicenseForm');
     if (form) {
         form.reset();
         document.getElementById('licenseId').value = "";
+        
+        // Reset notification recipients
+        notificationRecipients = [];
+        renderNotificationList();
         
         // Reset modal header and button text
         const modalTitleElem = document.getElementById('modalTitle');
@@ -158,23 +179,17 @@ function resetLicenseForm() {
         if (licenseSubmitBtn) {
             licenseSubmitBtn.textContent = "Save";
         }
+        
+        // Reset the active tab to the first tab
+        const firstTab = document.querySelector('#addLicenseModal .nav-link');
+        if (firstTab && typeof bootstrap !== 'undefined' && bootstrap.Tab) {
+            new bootstrap.Tab(firstTab).show();
+        } else if (firstTab && typeof $ !== 'undefined') {
+            $(firstTab).tab('show');
+        }
     }
 }
 
-// Spinner functions
-function showSpinner() {
-    const spinner = document.getElementById('spinnerOverlay');
-    if (spinner) {
-        spinner.classList.remove('d-none');
-    }
-}
-
-function hideSpinner() {
-    const spinner = document.getElementById('spinnerOverlay');
-    if (spinner) {
-        spinner.classList.add('d-none');
-    }
-}
 
 // Helper to wrap status with colored tag using Bootstrap badges
 function getStatusTag(status) {
@@ -219,7 +234,7 @@ async function loadInitialData() {
     }
 }
 
-// Update category cards with data (without making another API call)
+// Updated function to render improved category cards
 function updateCategoryCards(categories) {
     console.log("Updating category cards...");
     const container = document.getElementById('categoryCardsContainer');
@@ -236,25 +251,37 @@ function updateCategoryCards(categories) {
         const col = document.createElement('div');
         col.className = "col-md-4 mb-3";
         col.innerHTML = `
-        <div class="card">
-        <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center">
-            <h5 class="card-title mb-0">${cat.name}</h5>
-            <div>
-                <span class="badge bg-primary text-white">${cat.total || 0} total</span>
-                <button class="btn btn-outline-danger btn-xs ms-4" onclick="deleteCategory(${cat.id}, '${cat.name}')">
-                <i class="fas fa-trash"></i>
-                </button>
-            </div>
-            </div>
-            <div class="mt-3 d-flex justify-content-between text-muted">
-            <div><span class="fw-bold text-success">${cat.active || 0}</span> Active</div>
-            <div><span class="fw-bold text-warning">${cat.expiring || 0}</span> Expiring</div>
-            <div><span class="fw-bold text-danger">${cat.expired || 0}</span> Expired</div>
+        <div class="card category-card  shadow-sm">
+            <div class="card-body p-2">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h5 class="card-title mb-0 fw-bold">${cat.name}</h5>
+                    <button class="btn btn-outline-danger btn-sm" onclick="deleteCategory(${cat.id}, '${cat.name}')">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+                
+                <div class="total-count py-1 px-2 mb-4 rounded d-inline-block">
+                    <span class="total-number">${cat.total || 0}</span>
+                    <span class="total-label">Total licenses</span>
+                </div>
+                
+                <div class="d-flex justify-content-between text-muted">
+                    <div class="stat-item">
+                        <span class="stat-value text-success">${cat.active || 0}</span>
+                        <span class="stat-label">Active</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value text-warning">${cat.expiring || 0}</span>
+                        <span class="stat-label">Expiring</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value text-danger">${cat.expired || 0}</span>
+                        <span class="stat-label">Expired</span>
+                    </div>
+                </div>
             </div>
         </div>
-        </div>
-    `;
+        `;
         container.appendChild(col);
     });
 }
@@ -475,12 +502,13 @@ async function loadLicenses(page = 1) {
 
 // Build or update the pagination controls
 function updatePaginationControls(current, total) {
+    console.log("Pagination update called with total:", total);
     const paginationControls = document.getElementById('paginationControls');
     if (!paginationControls) return;
     
     paginationControls.innerHTML = '';
     
-    if (total <= 1) return; // Don't show pagination for a single page
+    if (total < 1) return; // Don't show pagination for a single page
 
     // Previous button
     const prevItem = document.createElement('li');
@@ -671,90 +699,94 @@ function closeModal(modalEl) {
     }
 }
 
-// Updated form submission handler with improved modal closing
-const addLicenseForm = document.getElementById('addLicenseForm');
-if (addLicenseForm) {
-    addLicenseForm.onsubmit = null; // Clear any existing handlers
-    
-    addLicenseForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
+// Update the form submission handler
+function updateFormSubmissionHandler() {
+    const addLicenseForm = document.getElementById('addLicenseForm');
+    if (addLicenseForm) {
+        addLicenseForm.onsubmit = null; // Clear any existing handlers
         
-        // Validate form
-        const licenseName = document.getElementById('licenseName').value.trim();
-        const licenseCategory = document.getElementById('licenseCategory').value;
-        const licenseType = document.getElementById('licenseType').value;
-        
-        if (!licenseName || !licenseCategory || !licenseType) {
-            alert('Please fill in all required fields');
-            return;
-        }
-        
-        // Disable the submit button to prevent double submission
-        const submitBtn = document.getElementById('licenseSubmitBtn');
-        if (submitBtn) submitBtn.disabled = true;
-        
-        showSpinner();
-        
-        const formData = {
-            name: licenseName,
-            category: licenseCategory,
-            license_type: licenseType,
-            assigned_to: document.getElementById('assignedTo').value.trim(),
-            expiry_date: document.getElementById('expiryDate').value,
-            is_perpetual: (licenseType === 'Perpetual')
-        };
-        const licenseId = document.getElementById('licenseId').value;
-        
-        try {
-            let response;
-            if (licenseId) {
-                // Edit mode – send PUT request
-                response = await fetch(`/ict-license/licenses/${licenseId}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(formData)
-                });
-            } else {
-                // Add mode – send POST request
-                response = await fetch('/ict-license/licenses', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(formData)
-                });
+        addLicenseForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Validate form
+            const licenseName = document.getElementById('licenseName').value.trim();
+            const licenseCategory = document.getElementById('licenseCategory').value;
+            const licenseType = document.getElementById('licenseType').value;
+            
+            if (!licenseName || !licenseCategory || !licenseType) {
+                alert('Please fill in all required fields');
+                return;
             }
             
-            if (response.ok) {
-                alert(licenseId ? 'License updated successfully!' : 'License saved successfully!');
+            // Disable the submit button to prevent double submission
+            const submitBtn = document.getElementById('licenseSubmitBtn');
+            if (submitBtn) submitBtn.disabled = true;
+            
+            showSpinner();
+            
+            const formData = {
+                name: licenseName,
+                category: licenseCategory,
+                license_type: licenseType,
+                assigned_to: document.getElementById('assignedTo').value.trim(),
+                expiry_date: document.getElementById('expiryDate').value,
+                is_perpetual: (licenseType === 'Perpetual'),
+                notifications: notificationRecipients
+            };
+            
+            const licenseId = document.getElementById('licenseId').value;
+            
+            try {
+                let response;
+                if (licenseId) {
+                    // Edit mode – send PUT request
+                    response = await fetch(`/ict-license/licenses/${licenseId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(formData)
+                    });
+                } else {
+                    // Add mode – send POST request
+                    response = await fetch('/ict-license/licenses', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(formData)
+                    });
+                }
                 
-                // First reset the form to clear any values
-                resetLicenseForm();
-                
-                // Clear the cache so we get fresh data
-                invalidateCache();
-                
-                // Close the modal safely
-                const modalEl = document.getElementById('addLicenseModal');
-                closeModal(modalEl);
-                
-                // Reload data to reflect changes - important to refresh category cards
-                await loadCategoryCards();
-                await loadLicenses(currentPage);
-            } else {
-                const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
-                alert(`Failed to save license: ${errorData.message || response.statusText}`);
+                if (response.ok) {
+                    alert(licenseId ? 'License updated successfully!' : 'License saved successfully!');
+                    
+                    // First reset the form to clear any values
+                    resetLicenseForm();
+                    
+                    // Clear the cache so we get fresh data
+                    invalidateCache();
+                    
+                    // Close the modal safely
+                    const modalEl = document.getElementById('addLicenseModal');
+                    closeModal(modalEl);
+                    
+                    // Reload data to reflect changes - important to refresh category cards
+                    await loadCategoryCards();
+                    await loadLicenses(currentPage);
+                } else {
+                    const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+                    alert(`Failed to save license: ${errorData.message || response.statusText}`);
+                }
+            } catch (error) {
+                console.error('Error saving license:', error);
+                alert(`Error saving license: ${error.message}`);
+            } finally {
+                // Re-enable the submit button
+                if (submitBtn) submitBtn.disabled = false;
+                hideSpinner();
             }
-        } catch (error) {
-            console.error('Error saving license:', error);
-            alert(`Error saving license: ${error.message}`);
-        } finally {
-            // Re-enable the submit button
-            if (submitBtn) submitBtn.disabled = false;
-            hideSpinner();
-        }
-    });
+        });
+    }
 }
 
-// Updated editLicense function with better modal handling
+// Edit license function - update to load notification recipients
 async function editLicense(id) {
     if (!id) {
         alert('Invalid license ID');
@@ -820,6 +852,10 @@ async function editLicense(id) {
         document.getElementById('assignedTo').value = lic.assigned_to || "";
         document.getElementById('expiryDate').value = lic.expiry_date || "";
         
+        // Load notification recipients
+        notificationRecipients = lic.notifications || [];
+        renderNotificationList();
+        
         // Update modal header and button text for editing
         document.getElementById('modalTitle').innerHTML = 
             '<span class="fw-mediumbold">Edit</span> <span class="fw-light">License</span>';
@@ -857,6 +893,7 @@ async function editLicense(id) {
         hideSpinner();
     }
 }
+
 
 // Delete License: Delete the license and refresh the table
 async function deleteLicense(id) {
@@ -899,30 +936,133 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
+
+// Store notification recipients
+let notificationRecipients = [];
+
+
+// Render the notification list
+function renderNotificationList() {
+    const container = document.getElementById('notificationListContainer');
+    if (!container) return;
+    
+    if (notificationRecipients.length === 0) {
+        container.innerHTML = '<p class="text-muted small">No notification recipients added yet.</p>';
+        return;
+    }
+    
+    let html = '<div class="table-responsive"><table class="table table-sm table-dark">';
+    html += '<thead><tr><th>Email</th><th>Name</th><th>Primary</th><th>Action</th></tr></thead>';
+    html += '<tbody>';
+    
+    notificationRecipients.forEach((recipient, index) => {
+        html += `<tr>
+            <td>${recipient.email}</td>
+            <td>${recipient.name || '-'}</td>
+            <td>${recipient.is_primary ? '<span class="badge bg-primary">Yes</span>' : ''}</td>
+            <td>
+                <button type="button" class="btn btn-danger btn-xs" onclick="removeNotificationRecipient(${index})">
+                    <i class="fa fa-times"></i>
+                </button>
+                ${!recipient.is_primary ? `<button type="button" class="btn btn-primary btn-xs ml-1" onclick="makePrimaryContact(${index})">
+                    Make Primary
+                </button>` : ''}
+            </td>
+        </tr>`;
+    });
+    
+    html += '</tbody></table></div>';
+    container.innerHTML = html;
+}
+
+// Validate email format
+function isValidEmail(email) {
+    const re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    return re.test(String(email).toLowerCase());
+}
+
+
+// Add a notification recipient
+function addNotificationRecipient() {
+    const emailInput = document.getElementById('notificationEmail');
+    const nameInput = document.getElementById('notificationName');
+    const isPrimaryInput = document.getElementById('isPrimaryContact');
+    
+    // Simple validation
+    if (!emailInput.value) {
+        alert('Email address is required');
+        return;
+    }
+    
+    if (!isValidEmail(emailInput.value)) {
+        alert('Please enter a valid email address');
+        return;
+    }
+    
+    // Create notification object
+    const notification = {
+        email: emailInput.value,
+        name: nameInput.value || '',
+        is_primary: isPrimaryInput.checked
+    };
+    
+    // If this is primary, set others to not primary
+    if (notification.is_primary) {
+        notificationRecipients.forEach(item => {
+            item.is_primary = false;
+        });
+    }
+    
+    // Add to list
+    notificationRecipients.push(notification);
+    
+    // Clear input fields
+    emailInput.value = '';
+    nameInput.value = '';
+    isPrimaryInput.checked = false;
+    
+    // Render updated list
+    renderNotificationList();
+}
+
+
+// Initialize notification handling
+function initNotificationHandling() {
+    const addNotificationBtn = document.getElementById('addNotificationBtn');
+    if (addNotificationBtn) {
+        addNotificationBtn.addEventListener('click', addNotificationRecipient);
+    }
+    
+    // Clear notification recipients when modal is closed
+    $('#addLicenseModal').on('hidden.bs.modal', function() {
+        notificationRecipients = [];
+        renderNotificationList();
+    });
+}
+
+
+// Remove a notification recipient
+function removeNotificationRecipient(index) {
+    notificationRecipients.splice(index, 1);
+    renderNotificationList();
+}
+
+// Make a contact the primary contact
+function makePrimaryContact(index) {
+    // Set all to not primary first
+    notificationRecipients.forEach((recipient, i) => {
+        recipient.is_primary = (i === index);
+    });
+    renderNotificationList();
+}
+
+
+
 // Improved modal initialization code for DOMContentLoaded event
 document.addEventListener('DOMContentLoaded', () => {
     // Use the optimized loading function
     loadInitialData();
+    initNotificationHandling();
+    updateFormSubmissionHandler();
     
-    // Improved modal handling
-    const modalEl = document.getElementById('addLicenseModal');
-    if (modalEl) {
-        // Set up event listeners for modal hiding
-        modalEl.addEventListener('hidden.bs.modal', resetLicenseForm);
-        modalEl.addEventListener('hidden', resetLicenseForm); // For older Bootstrap
-        
-        // Set up close button handlers
-        const closeButtons = modalEl.querySelectorAll('[data-bs-dismiss="modal"], [data-dismiss="modal"], .close, .btn-close, button.close');
-        closeButtons.forEach(button => {
-            button.addEventListener('click', (e) => {
-                e.preventDefault();
-                closeModal(modalEl);
-            });
-        });
-    }
-    
-    // Support for Bootstrap 4's jQuery modal
-    if (typeof $ !== 'undefined' && modalEl) {
-        $(modalEl).on('hidden.bs.modal', resetLicenseForm);
-    }
 });

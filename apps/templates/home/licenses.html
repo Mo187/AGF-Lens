@@ -3,7 +3,85 @@
 {% block title %} License Hub {% endblock %}
 
 {% block stylesheets %}
-<!-- Additional head content for Bootstrap page -->
+
+<style>
+  /* Search bar styling */
+  .search-section {
+    transition: all 0.3s ease;
+  }
+  
+  #licenseSearchInput {
+    height: calc(2.5rem + 2px);
+    transition: all 0.2s ease;
+  }
+  
+  #licenseSearchInput:focus {
+    box-shadow: 0 0 0 0.2rem rgba(26, 115, 232, 0.25);
+  }
+  
+  /* Clear button styling */
+  #clearSearchBtn {
+    transition: all 0.2s ease;
+  }
+  
+  /* Ensure the input group elements align properly */
+  .search-section .input-group {
+    align-items: stretch;
+  }
+  
+  .search-section .input-group-text,
+  .search-section .form-control,
+  .search-section .btn {
+    display: flex;
+    align-items: center;
+  }
+</style>
+
+<style>
+  /* Category Card Styles */
+  .category-card {
+      transition: transform 0.2s ease;
+      border-left: 3px solid #1a73e8;
+  }
+  
+  .category-card:hover {
+      transform: translateY(-3px);
+  }
+  
+  /* Total Count Styles */
+  .total-count {
+      background-color: #ffeded;
+  }
+  
+  .total-number {
+      font-size: 1.25rem;
+      font-weight: bold;
+      margin-right: 5px;
+      color: #1a73e8;
+  }
+  
+  .total-label {
+      font-size: 0.9rem;
+      color: #5f6368;
+  }
+  
+  /* Stat Item Styles */
+  .stat-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+  }
+  
+  .stat-value {
+      font-size: 1rem;
+      font-weight: bold;
+  }
+  
+  .stat-label {
+      font-size: 0.8rem;
+  }
+</style>
+
 <style>
   /* Improved animations and transitions */
   .fade-in {
@@ -38,6 +116,17 @@
     opacity: 0.9;
 }
 
+#paginationControls {
+  display: flex !important;
+  visibility: visible !important;
+  min-height: 40px;
+}
+
+.card-footer {
+  display: block !important;
+  visibility: visible !important;
+}
+
 thead {
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
@@ -47,23 +136,12 @@ thead {
  .table-hover tbody tr {
   transition: all 0.2s ease;
 }
-.table-hover tbody tr:hover {
-  background-color: rgba(13, 110, 253, 0.05);
-  transform: translateY(-1px);
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-}
 
 /* Badge styling */
 .badge {
   padding: 0.5em 0.75em;
   font-weight: 500;
   letter-spacing: 0.3px;
-}
-
-/* Card styling */
-.card {
-  transition: all 0.3s ease;
-  border: none;
 }
 
 /* Smooth transitions */
@@ -102,11 +180,6 @@ thead {
   border-right: none;
 }
 
-/* Add subtle stripe to table */
-.table tbody tr:nth-of-type(odd) {
-  background-color: rgba(0, 0, 0, 0.01);
-}
-
  /* Improved icon spacing in table headers */
  .icon-container {
   width: 20px;
@@ -119,9 +192,234 @@ thead .icon-container i {
   opacity: 0.8;
 }
 
+  /* Fixed height table container */
+  .table-container {
+    min-height: 300px; /* Adjust this value based on your typical table size */
+    position: relative;
+    transition: all 0.3s ease;
+  }
+  
+  /* Smooth transition for table rows */
+  .table tbody tr {
+    transition: opacity 0.2s ease;
+  }
+  
+  /* Empty state positioning */
+  #emptyState {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    transition: opacity 0.3s ease;
+  }
+
 </style>
 
+<style>
+  /* Custom card styling */
+  .stats-card {
+    border: none;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .stats-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.12), 0 4px 8px rgba(0,0,0,0.06) !important;
+  }
+  
+  /* Icon background styling */
+  .icon-bg {
+    width: 100px;
+    height: 100%;
+    min-height: 120px;
+  }
+  
+  /* Soft background colors for icon sections */
+  .bg-primary-soft {
+    background-color: rgba(0, 123, 255, 0.15);
+  }
+  
+  .bg-warning-soft {
+    background-color: rgba(255, 193, 7, 0.15);
+  }
+  
+  .bg-danger-soft {
+    background-color: rgba(220, 53, 69, 0.15);
+  }
+  
+  /* Typography enhancements */
+  .stat-title {
+    color: #6c757d;
+    letter-spacing: 1px;
+    font-size: 0.85rem;
+  }
+  
+  .stat-value {
+    color: #212529;
+    line-height: 1;
+  }
+  
+  /* Card footer */
+  .card-footer {
+    border-top: none;
+    font-weight: 500;
+  }
+  
+  /* Make sure Font Awesome icons are properly sized */
+  .fas {
+    vertical-align: middle;
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 767.98px) {
+    .icon-bg {
+      width: 80px;
+      min-height: 100px;
+    }
+    
+    .stat-value {
+      font-size: 2rem;
+    }
+  }
+</style>
 
+<style>
+  /* Enhanced card styling */
+  .license-overview .card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
+    border-radius: 0.5rem;
+  }
+  
+  /* Loading spinner animation */
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  
+
+  /* Table styling */
+  .license-overview .table {
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+  
+  .license-overview .table tbody tr {
+    border-bottom: 1px solid #f0f0f0;
+    transition: all 0.2s ease;
+  }
+  
+  /* Form control styling */
+  .license-overview .form-select,
+  .license-overview .form-control,
+  .license-overview .input-group-text {
+    border-color: #e0e0e0;
+    height: calc(2.2rem + 2px);
+  }
+  
+  /* Background soft color */
+  .bg-soft {
+    background-color: #f0f2f5;
+  }
+  
+  /* Filter section styling */
+  .filter-section {
+    background-color: #f5f7fa;
+  }
+  
+  /* Table header styling */
+  .table-header {
+    background-color: #f0f4f8;
+  }
+  
+  /* Button styling */
+  .license-overview .btn-primary {
+    background-color: #1a73e8;
+    border-color: #1a73e8;
+  }
+  
+  .license-overview .btn-primary:hover {
+    background-color: #1765cc;
+    border-color: #1765cc;
+  }
+  
+  /* Pagination styling */
+  .license-overview .pagination .page-link {
+    color: #1a73e8;
+    border-color: #e0e0e0;
+  }
+  
+  .license-overview .pagination .page-item.active .page-link {
+    background-color: #2b3036;
+    border-color: #1a73e8;
+  }
+  
+  
+  /* Action buttons styling */
+  .license-overview .action-btn {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    margin: 0 3px;
+    transition: all 0.2s;
+  }
+  
+  .license-overview .action-btn:hover {
+    transform: translateY(-2px);
+  }
+</style>
+
+<style>
+  /* Panel Header Styles */
+  .panel-header {
+    background: #2c3e50;
+    position: relative;
+    z-index: 1;
+  }
+  
+  /* Animated Background Gradient */
+  .panel-bg-gradient {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, 
+      rgb(0, 98, 255) 0%, 
+      rgba(243, 179, 75, 0.9) 55%, 
+      rgb(255, 60, 80) 100%);
+    opacity: 0.85;
+    z-index: -1;
+  }
+  
+  
+  /* Decorative Accent Elements */
+  .header-accent {
+    position: absolute;
+    border-radius: 50%;
+  }
+  
+ 
+  
+  /* Button styling */
+  .panel-header .btn-light {
+    font-weight: 600;
+    border: none;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  
+  .panel-header .btn-light:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+  }
+</style>
 <!-- Bootstrap CSS -->
 <!-- Bootstrap Bundle JS (includes Popper) -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -132,7 +430,6 @@ thead .icon-container i {
 
 <div class="content">
 
-  
   <br>
 
   <!-- Stars animation -->
@@ -159,7 +456,7 @@ thead .icon-container i {
 
 <!-- Improved Modal for Add/Edit License -->
 <div class="modal fade" id="addLicenseModal" tabindex="-1" role="dialog" aria-hidden="true">
-  <div class="modal-dialog" role="document">
+  <div class="modal-dialog modal-lg" role="document">
     <div class="modal-content">
       <form id="addLicenseForm" class="needs-validation" novalidate>
         <!-- Hidden field to store license id when editing -->
@@ -175,50 +472,109 @@ thead .icon-container i {
         </div>
         <div class="modal-body bg-dark-gradient">
           <p class="small">Create a new license using this form. Make sure you fill all required fields.</p>
-          <div class="row">
-            <div class="col-sm-12">
-              <div class="form-group form-group-default">
-                <label>License Name</label>
-                <input id="licenseName" name="licenseName" type="text" required class="form-control"
-                  placeholder="Enter license name" />
-                <div class="invalid-feedback">Please provide a license name.</div>
+          
+          <!-- License Info Tab -->
+          <ul class="nav nav-tabs nav-tabs-neutral" role="tablist">
+            <li class="nav-item">
+              <a class="nav-link active" data-bs-toggle="tab" href="#licenseInfo" role="tab">License Information</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" data-bs-toggle="tab" href="#notificationRecipients" role="tab">Notification Recipients</a>
+            </li>
+          </ul>
+          
+          <div class="tab-content mt-3">
+            <!-- License Information Tab -->
+            <div class="tab-pane fade show active" id="licenseInfo" role="tabpanel">
+              <div class="row">
+                <div class="col-sm-12">
+                  <div class="form-group form-group-default">
+                    <label>License Name</label>
+                    <input id="licenseName" name="licenseName" type="text" required class="form-control"
+                      placeholder="Enter license name" />
+                    <div class="invalid-feedback">Please provide a license name.</div>
+                  </div>
+                </div>
+                <div class="col-md-6 pr-0">
+                  <div class="form-group form-group-default">
+                    <label>Category</label>
+                    <select id="licenseCategory" name="licenseCategory" required class="form-control">
+                      <option value="" disabled selected>Select Category</option>
+                      <!-- Categories will be loaded dynamically by JavaScript -->
+                    </select>
+                    <div class="invalid-feedback">Please select a category.</div>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-group form-group-default">
+                    <label>License Type</label>
+                    <select id="licenseType" name="licenseType" required class="form-control">
+                      <option value="" disabled selected>Select Type</option>
+                      <option value="Subscription">Subscription</option>
+                      <option value="Annual">Annual</option>
+                      <option value="Perpetual">Perpetual</option>
+                      <option value="Password">Password</option>
+                    </select>
+                    <div class="invalid-feedback">Please select a license type.</div>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-group form-group-default">
+                    <label>Assigned To</label>
+                    <input id="assignedTo" name="assignedTo" type="text" class="form-control"
+                      placeholder="Enter assignee name" />
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-group form-group-default">
+                    <label>Expiry Date</label>
+                    <input id="expiryDate" name="expiryDate" type="date" class="form-control" />
+                    <div class="invalid-feedback">Please select an expiry date.</div>
+                  </div>
+                </div>
               </div>
             </div>
-            <div class="col-md-6 pr-0">
-              <div class="form-group form-group-default">
-                <label>Category</label>
-                <select id="licenseCategory" name="licenseCategory" required class="form-control">
-                  <option value="" disabled selected>Select Category</option>
-                  <!-- Categories will be loaded dynamically by JavaScript -->
-                </select>
-                <div class="invalid-feedback">Please select a category.</div>
+            
+            <!-- Notification Recipients Tab -->
+            <div class="tab-pane fade" id="notificationRecipients" role="tabpanel">
+              <div class="row">
+                <div class="col-12 mb-3">
+                  <h6 class="text-white">Add recipients who should be notified about this license's expiration</h6>
+                  <p class="small text-muted">Add one or more email addresses to receive notifications. If none are provided, notifications will be sent to the IT team.</p>
+                </div>
               </div>
-            </div>
-            <div class="col-md-6">
-              <div class="form-group form-group-default">
-                <label>License Type</label>
-                <select id="licenseType" name="licenseType" required class="form-control">
-                  <option value="" disabled selected>Select Type</option>
-                  <option value="Subscription">Subscription</option>
-                  <option value="Annual">Annual</option>
-                  <option value="Perpetual">Perpetual</option>
-                  <option value="Password">Password</option>
-                </select>
-                <div class="invalid-feedback">Please select a license type.</div>
+              
+              <!-- Notification list container -->
+              <div id="notificationListContainer" class="mb-3">
+                <!-- Notification items will be added here dynamically -->
               </div>
-            </div>
-            <div class="col-md-6">
-              <div class="form-group form-group-default">
-                <label>Assigned To</label>
-                <input id="assignedTo" name="assignedTo" type="text" class="form-control"
-                  placeholder="Enter assignee name" />
-              </div>
-            </div>
-            <div class="col-md-6">
-              <div class="form-group form-group-default">
-                <label>Expiry Date</label>
-                <input id="expiryDate" name="expiryDate" type="date" class="form-control" />
-                <div class="invalid-feedback">Please select an expiry date.</div>
+              
+              <div class="row" id="newNotificationRow">
+                <div class="col-md-5">
+                  <div class="form-group form-group-default">
+                    <label>Email</label>
+                    <input id="notificationEmail" type="email" class="form-control" placeholder="Enter email address" />
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="form-group form-group-default">
+                    <label>Name (Optional)</label>
+                    <input id="notificationName" type="text" class="form-control" placeholder="Enter name" />
+                  </div>
+                </div>
+                <div class="col-md-2 d-flex align-items-center mt-3">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="isPrimaryContact">
+                    <label class="form-check-label text-white" for="isPrimaryContact">
+                      Primary
+                    </label>
+                  </div>
+                </div>
+                <div class="col-md-1 d-flex align-items-center mt-3">
+                  <button type="button" class="btn btn-sm btn-success" id="addNotificationBtn">
+                    <i class="fa fa-plus"></i>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -232,81 +588,105 @@ thead .icon-container i {
   </div>
 </div>
 
-
-  <div class="panel-header shadow-lg rounded" style="background: linear-gradient(135deg, #000000, #ffffff45);">
-    <div class="page-inner py-2">
-      <br>
-      <div class="d-flex align-items-left align-items-md-center flex-column flex-md-row">
-
-        <div>
-          <h1 class="text-white pb-3 fw-bold" style="font-size: 40px;">AGF License Hub</h1>
-          <h5 class="text-white op-7 mb-2" style="color: white;">Manage all licenses and password expiries.</h5>
-          <br>
-        </div>
-        <div class="ml-md-auto py-2 py-md-0">
-          <button id="openLicenseModalBtn" class="btn btn-primary d-flex align-items-center" type="button"
-            data-bs-toggle="modal" data-bs-target="#addLicenseModal">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24"
-              stroke="currentColor" stroke-width="2" class="me-2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-            </svg>
-            Add New License
-          </button>
+<!-- Improved Panel Header with Card Colors -->
+<div class="panel-header shadow-lg rounded position-relative overflow-hidden">
+  <!-- Background with animated gradient using colors from the three status cards -->
+  <div class="panel-bg-gradient"></div>
+  
+  <div class="page-inner py-4 position-relative">
+    <div class="d-flex align-items-left align-items-md-center flex-column flex-md-row">
+      <div>
+        <h1 class="text-white pb-2 fw-bold display-4">AGF License Hub</h1>
+        <div class="d-flex align-items-center mb-3">
+          <div class="header-indicator me-2"></div>
+          <h5 class="text-white op-8 mb-0">Manage all licenses and password expiries</h5>
         </div>
       </div>
+      <div class="ml-md-auto py-2 py-md-0">
+        <button id="openLicenseModalBtn" class="btn btn-light btn-lg d-flex align-items-center" type="button"
+          data-bs-toggle="modal" data-bs-target="#addLicenseModal">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor" stroke-width="2" class="me-2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+          </svg>
+          Add New License
+        </button>
+      </div>
     </div>
-    <br>
   </div>
+  
+  <!-- Decorative Elements -->
+  <div class="header-accent header-accent-1"></div>
+  <div class="header-accent header-accent-2"></div>
+  <div class="header-accent header-accent-3"></div>
+</div>
 
-<div class="content py-5 px-5">
-  <div>
+
+  <div class="content py-4 px-4">
 
     <div class="row mb-4">
-      <div class="col-md-4 mb-3">
-        <div class="stats-card card border-start border-4 border-primary h-100"
-          style="background: linear-gradient( #0e1925 0%, #10b46560 100%);">
-          <div class="card-body d-flex justify-content-between align-items-center p-4">
-            <div>
-              <p class="text-muted mb-1">Total Licenses</p>
-              <h2 class="h3 mb-0 fw-bold text-white" id="totalLicenses">0</h2>
+
+      <!-- Total Licenses Card -->
+    <div class="col-md-4 mb-3">
+      <div class="stats-card card h-100 shadow-sm">
+        <div class="card-body p-0">
+          <div class="d-flex align-items-center">
+            <div class="icon-bg bg-primary-soft d-flex align-items-center justify-content-center">
+              <i class="fas fa-key fa-2x text-primary"></i>
             </div>
-            <div class="text-primary  bg-opacity-10 p-3 rounded">
-              <i class="fas fa-key fa-2x"></i>
+            <div class="stat-content p-4">
+              <h6 class="stat-title text-uppercase font-weight-bold mb-2 text-white">Total Licenses</h6>
+              <h2 class="stat-value display-5 font-weight-bold mb-0 text-white" id="totalLicenses">0</h2>
             </div>
           </div>
-        </div>
-      </div>
-
-      <div class="col-md-4 mb-3">
-        <div class="stats-card card border-start border-4 border-warning h-100"
-          style="background: linear-gradient( #0e1925 0%, #c9891244 100%);">
-          <div class="card-body d-flex justify-content-between align-items-center p-4">
-            <div>
-              <p class="text-muted mb-1">Expiring Soon</p>
-              <h2 class="h3 mb-0 fw-bold text-white" id="expiringSoon">0</h2>
-            </div>
-            <div class="text-warning  bg-opacity-10 p-3 rounded">
-              <i class="fas fa-clock fa-2x"></i>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-md-4 mb-3">
-        <div class="stats-card card border-start border-4 border-danger h-100"
-          style="background: linear-gradient( #0e1925 0%, #b8272744 100%);">
-          <div class="card-body d-flex justify-content-between align-items-center p-4">
-            <div>
-              <p class="text-muted mb-1">Expired</p>
-              <h2 class="h3 mb-0 fw-bold text-white" id="expiredCount">0</h2>
-            </div>
-            <div class="text-danger  bg-opacity-10 p-3 rounded">
-              <i class="fas fa-times-circle fa-2x"></i>
-            </div>
+          <div class="card-footer bg-primary text-white py-2">
+            <small><i class="fas fa-info-circle mr-1"></i> All active and inactive licenses</small>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- Expiring Soon Card -->
+    <div class="col-md-4 mb-3">
+      <div class="stats-card card h-100 shadow-sm">
+        <div class="card-body p-0">
+          <div class="d-flex align-items-center">
+            <div class="icon-bg bg-warning-soft d-flex align-items-center justify-content-center">
+              <i class="fas fa-clock fa-2x text-warning"></i>
+            </div>
+            <div class="stat-content p-4">
+              <h6 class="stat-title text-uppercase font-weight-bold mb-2 text-white">Expiring Soon</h6>
+              <h2 class="stat-value display-5 font-weight-bold mb-0 text-white" id="expiringSoon">0</h2>
+            </div>
+          </div>
+          <div class="card-footer bg-warning text-white py-2">
+            <small><i class="fas fa-exclamation-triangle mr-1"></i> Licenses expiring in 30 days</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Expired Card -->
+    <div class="col-md-4 mb-3">
+      <div class="stats-card card h-100 shadow-sm">
+        <div class="card-body p-0">
+          <div class="d-flex align-items-center">
+            <div class="icon-bg bg-danger-soft d-flex align-items-center justify-content-center">
+              <i class="fas fa-times-circle fa-2x text-danger"></i>
+            </div>
+            <div class="stat-content p-4">
+              <h6 class="stat-title text-uppercase font-weight-bold mb-2 text-white">Expired</h6>
+              <h2 class="stat-value display-5 font-weight-bold mb-0 text-white" id="expiredCount">0</h2>
+            </div>
+          </div>
+          <div class="card-footer bg-danger text-white py-2">
+            <small><i class="fas fa-ban mr-1"></i> Licenses that need renewal</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+</div>
 
     <!-- Category Cards Container -->
     <div id="categoryCardsContainer" class="row mb-4">
@@ -319,7 +699,7 @@ thead .icon-container i {
   <div class="card shadow-lg border-0 rounded-lg overflow-hidden">
     <!-- Header -->
     <div class="card-header p-0">
-      <div class="bg-gradient-primary text-white p-4" style="background: linear-gradient(135deg, #1a237e, #0d47a1);">
+      <div class="bg-primary text-white p-4 rounded-top" style="background: linear-gradient(135deg, #2e4686, #1a73e8) !important;">
         <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center">
           <div class="mb-3 mb-md-0">
             <h2 class="h4 mb-1 font-weight-bold">License Overview</h2>
@@ -334,16 +714,16 @@ thead .icon-container i {
     </div>
 
     <!-- Filter Section -->
-    <div class="card-body bg-black p-4 border-bottom">
+    <div class="card-body filter-section p-4 border-bottom">
       <div class="row g-3">
         <div class="col-md-4">
           <div class="form-group">
-            <label for="filterCategory" class="form-label fw-semibold small mb-1">Category</label>
+            <label for="filterCategory" class="form-label fw-semibold small mb-1 text-primary">Category</label>
             <div class="input-group">
-              <span class="input-group-text bg-white border-end-0">
+              <span class="input-group-text bg-soft border-end-0">
                 <i class="fas fa-tag text-primary"></i>
               </span>
-              <select id="filterCategory" class="form-select border-start-0" style="border-radius: 0 4px 4px 0;">
+              <select id="filterCategory" class="form-select bg-soft border-start-0" style="border-radius: 0 4px 4px 0;">
                 <option value="">All Categories</option>
                 <!-- Options loaded dynamically -->
               </select>
@@ -353,12 +733,12 @@ thead .icon-container i {
         
         <div class="col-md-4">
           <div class="form-group">
-            <label for="filterType" class="form-label fw-semibold small mb-1">License Type</label>
+            <label for="filterType" class="form-label fw-semibold small mb-1 text-primary">License Type</label>
             <div class="input-group">
-              <span class="input-group-text bg-white border-end-0">
+              <span class="input-group-text bg-soft border-end-0">
                 <i class="fas fa-cube text-primary"></i>
               </span>
-              <select id="filterType" class="form-select border-start-0" style="border-radius: 0 4px 4px 0;">
+              <select id="filterType" class="form-select bg-soft border-start-0" style="border-radius: 0 4px 4px 0;">
                 <option value="">All Types</option>
                 <option value="Subscription">Subscription</option>
                 <option value="Annual">Annual</option>
@@ -370,12 +750,12 @@ thead .icon-container i {
         
         <div class="col-md-4">
           <div class="form-group">
-            <label for="filterStatus" class="form-label fw-semibold small mb-1">Status</label>
+            <label for="filterStatus" class="form-label fw-semibold small mb-1 text-primary">Status</label>
             <div class="input-group">
-              <span class="input-group-text bg-white border-end-0">
+              <span class="input-group-text bg-soft border-end-0">
                 <i class="fas fa-circle-check text-primary"></i>
               </span>
-              <select id="filterStatus" class="form-select border-start-0" style="border-radius: 0 4px 4px 0;">
+              <select id="filterStatus" class="form-select bg-soft border-start-0" style="border-radius: 0 4px 4px 0;">
                 <option value="">All Statuses</option>
                 <option value="Active">Active</option>
                 <option value="Expiring Soon">Expiring Soon</option>
@@ -388,99 +768,119 @@ thead .icon-container i {
       </div>
     </div>
     
-  <!-- Table -->
-<div class="card shadow-sm">
-  <div class="card-body p-0">
-    <div class="table-responsive">
-      <table class="table table-hover table-striped align-middle mb-0">
-        <thead>
-          <tr class="bg-light text-primary">
-            <th class="px-4 py-3 border-0">
-              <div class="d-flex align-items-center">
-                <div class="icon-container mr-4" style="width: 20px; text-align: center;">
-                  <i class="fas fa-key"></i>
-                </div>
-                <span>License Name</span>
-              </div>
-            </th>
-            <th class="px-4 py-3 border-0">
-              <div class="d-flex align-items-center">
-                <div class="icon-container mr-4" style="width: 20px; text-align: center;">
-                  <i class="fas fa-tag"></i>
-                </div>
-                <span>Category</span>
-              </div>
-            </th>
-            <th class="px-4 py-3 border-0">
-              <div class="d-flex align-items-center">
-                <div class="icon-container mr-4" style="width: 20px; text-align: center;">
-                  <i class="fas fa-cube"></i>
-                </div>
-                <span>Type</span>
-              </div>
-            </th>
-            <th class="px-4 py-3 border-0">
-              <div class="d-flex align-items-center">
-                <div class="icon-container mr-4" style="width: 20px; text-align: center;">
-                  <i class="fas fa-user"></i>
-                </div>
-                <span>Assigned To</span>
-              </div>
-            </th>
-            <th class="px-4 py-3 border-0">
-              <div class="d-flex align-items-center">
-                <div class="icon-container mr-4" style="width: 20px; text-align: center;">
-                  <i class="fas fa-calendar"></i>
-                </div>
-                <span>Expiry Date</span>
-              </div>
-            </th>
-            <th class="px-4 py-3 border-0">
-              <div class="d-flex align-items-center">
-                <div class="icon-container mr-4" style="width: 20px; text-align: center;">
-                  <i class="fas fa-circle-check"></i>
-                </div>
-                <span>Status</span>
-              </div>
-            </th>
-            <th class="px-4 py-3 border-0 text-center" style="min-width: 140px;">Actions</th>
-          </tr>
-        </thead>
-        <tbody id="licensesTableBody" class="border-top">
-          <!-- License rows inserted dynamically -->
-        </tbody>
-      </table>
-    </div>
-  </div>
-</div>
-
-      
-      <!-- Empty State (shown when no licenses) -->
-      <div id="emptyState" class="text-center py-5 d-none">
-        <div class="py-5">
-          <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
-          <h5 class="text-muted">No licenses found</h5>
-          <p class="text-muted">Try changing your filters or add a new license</p>
-          <button class="btn btn-primary btn-sm mt-2" data-bs-toggle="modal" data-bs-target="#addLicenseModal">
-            <i class="fas fa-plus me-1"></i> Add License
-          </button>
+    <!-- Search Bar for table -->
+    <div class="search-section p-3 border-bottom">
+      <div class="row">
+        <div class="col-md-8 mx-auto">
+          <div class="input-group">
+            <span class="input-group-text bg-soft border-end-0" style="height: calc(2.5rem + 2px); width: 45px;">
+              <i class="fas fa-search text-primary" style="font-size: 1.25rem;"></i>
+            </span>
+            <input type="text" id="licenseSearchInput" class="form-control bg-soft border-start-0" placeholder="Search ..." aria-label="Search licenses">
+            <button class="btn btn-primary" type="button" id="clearSearchBtn" style="display: none;">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
         </div>
       </div>
     </div>
     
-    <!-- Pagination Footer -->
-    <div class="card-footer border-0 py-3">
-      <nav aria-label="License Table Pagination">
-        <ul id="paginationControls" class="pagination pagination-sm justify-content-center mb-0">
-          <!-- Pagination items built dynamically -->
-        </ul>
-      </nav>
+    <!-- Table with Loading Overlay -->
+    <div class="card shadow-sm mb-0 border-0 position-relative">      
+      <div class="card-body p-0">
+        <div class="table-container">
+        <div class="table-responsive">
+          <table class="table align-middle mb-0">
+            <thead>
+              <tr class="table-header">
+                <th class="px-4 py-3 border-0">
+                  <div class="d-flex align-items-center">
+                    <div class="icon-container me-2" style="width: 28px; height: 28px; background-color: rgba(26, 115, 232, 0.15); border-radius: 6px; display: flex; align-items: center; justify-content: center;">
+                      <i class="fas fa-key text-primary"></i>
+                    </div>
+                    <span class="fw-bold text-dark">License Name</span>
+                  </div>
+                </th>
+                <th class="px-4 py-3 border-0">
+                  <div class="d-flex align-items-center">
+                    <div class="icon-container me-2" style="width: 28px; height: 28px; background-color: rgba(26, 115, 232, 0.15); border-radius: 6px; display: flex; align-items: center; justify-content: center;">
+                      <i class="fas fa-tag text-primary"></i>
+                    </div>
+                    <span class="fw-bold text-dark">Category</span>
+                  </div>
+                </th>
+                <th class="px-4 py-3 border-0">
+                  <div class="d-flex align-items-center">
+                    <div class="icon-container me-2" style="width: 28px; height: 28px; background-color: rgba(26, 115, 232, 0.15); border-radius: 6px; display: flex; align-items: center; justify-content: center;">
+                      <i class="fas fa-cube text-primary"></i>
+                    </div>
+                    <span class="fw-bold text-dark">Type</span>
+                  </div>
+                </th>
+                <th class="px-4 py-3 border-0">
+                  <div class="d-flex align-items-center">
+                    <div class="icon-container me-2" style="width: 28px; height: 28px; background-color: rgba(26, 115, 232, 0.15); border-radius: 6px; display: flex; align-items: center; justify-content: center;">
+                      <i class="fas fa-user text-primary"></i>
+                    </div>
+                    <span class="fw-bold text-dark">Assigned To</span>
+                  </div>
+                </th>
+                <th class="px-4 py-3 border-0">
+                  <div class="d-flex align-items-center">
+                    <div class="icon-container me-2" style="width: 28px; height: 28px; background-color: rgba(26, 115, 232, 0.15); border-radius: 6px; display: flex; align-items: center; justify-content: center;">
+                      <i class="fas fa-calendar text-primary"></i>
+                    </div>
+                    <span class="fw-bold text-dark">Expiry Date</span>
+                  </div>
+                </th>
+                <th class="px-4 py-3 border-0">
+                  <div class="d-flex align-items-center">
+                    <div class="icon-container me-2" style="width: 28px; height: 28px; background-color: rgba(26, 115, 232, 0.15); border-radius: 6px; display: flex; align-items: center; justify-content: center;">
+                      <i class="fas fa-circle-check text-primary"></i>
+                    </div>
+                    <span class="fw-bold text-dark">Status</span>
+                  </div>
+                </th>
+                <th class="px-4 py-3 border-0 text-center" style="min-width: 140px;">
+                  <span class="fw-bold text-dark">Actions</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody id="licensesTableBody" class="border-top">
+              <!-- License rows inserted dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+      </div>
     </div>
+      
+    <!-- Empty State (shown when no licenses) -->
+    <div id="emptyState" class="text-center py-5 d-none">
+      <div class="py-5">
+        <div class="mb-3" style="width: 80px; height: 80px; background-color: rgba(26, 115, 232, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto;">
+          <i class="fas fa-clipboard-list fa-2x text-primary"></i>
+        </div>
+        <h5 class="text-dark font-weight-bold">No licenses found</h5>
+        <p class="text-muted">Try changing your filters or add a new license</p>
+        <button class="btn btn-primary btn-sm mt-2 px-3 py-2" data-bs-toggle="modal" data-bs-target="#addLicenseModal">
+          <i class="fas fa-plus me-1"></i> Add License
+        </button>
+      </div>
+    </div>
+    
+   <!-- Pagination Footer -->
+   <div class="card-footer border-0 py-3">
+    <nav aria-label="License Table Pagination">
+      <ul id="paginationControls" class="pagination pagination-sm justify-content-center mb-0">
+        <!-- Pagination items built dynamically -->
+      </ul>
+    </nav>
   </div>
+</div>
+
 </section>
-
-
-  </div>
+  <!--  -->
 
 
   
@@ -507,6 +907,159 @@ thead .icon-container i {
 <!-- Your custom JS -->
 <script src="/static/assets/js/licenses.js"></script>
 
-<script src="/static/assets/js/stars.js" defer></script>
+<script>
 
+let originalLicenseData = [];
+
+
+function initLicenseSearch() {
+  const searchInput = document.getElementById('licenseSearchInput');
+  const clearBtn = document.getElementById('clearSearchBtn');
+  
+  if (!searchInput) return;
+  
+  // Listen for input changes
+  searchInput.addEventListener('input', function() {
+    const searchTerm = this.value.trim().toLowerCase();
+    
+    // Show/hide clear button based on search input
+    clearBtn.style.display = searchTerm.length > 0 ? 'block' : 'none';
+    
+    // Filter the table
+    filterLicenseTable(searchTerm);
+  });
+  
+  // Clear search when clicking the clear button
+  clearBtn.addEventListener('click', function() {
+    searchInput.value = '';
+    clearBtn.style.display = 'none';
+    filterLicenseTable('');
+    searchInput.focus();
+  });
+}
+
+function captureOriginalLicenseData() {
+  const tableBody = document.getElementById('licensesTableBody');
+  if (!tableBody) return;
+  
+  // Store the current license data
+  originalLicenseData = Array.from(tableBody.querySelectorAll('tr')).map(row => {
+    return {
+      element: row,
+      searchText: row.textContent.toLowerCase()
+    };
+  });
+}
+
+function updatePaginationForSearch(visibleCount) {
+  const paginationControls = document.getElementById('paginationControls');
+  if (!paginationControls) return;
+  
+  // For simple implementation, just hide pagination during search
+  const searchInput = document.getElementById('licenseSearchInput');
+  const isSearchActive = searchInput && searchInput.value.trim().length > 0;
+  
+  if (isSearchActive) {
+    paginationControls.style.display = 'none';
+  } else {
+    paginationControls.style.display = 'flex';
+  }
+}
+
+
+// Modified filterLicenseTable function
+function filterLicenseTable(searchTerm) {
+  const tableBody = document.getElementById('licensesTableBody');
+  const emptyState = document.getElementById('emptyState');
+  
+  if (!tableBody) return;
+  
+  // If original data hasn't been captured yet, do it now
+  if (originalLicenseData.length === 0) {
+    captureOriginalLicenseData();
+  }
+  
+  let visibleCount = 0;
+  
+  // First set all rows to invisible (opacity 0) with display still set
+  originalLicenseData.forEach(item => {
+    item.element.style.opacity = '0';
+    item.element.style.transition = 'opacity 0.2s ease';
+  });
+  
+  // Short timeout to allow fade out to happen
+  setTimeout(() => {
+    // Now actually filter the rows
+    originalLicenseData.forEach(item => {
+      const visible = searchTerm.length === 0 || item.searchText.includes(searchTerm);
+      
+      if (visible) {
+        item.element.style.display = '';
+        // Use a very short timeout to stagger the fade-in slightly
+        setTimeout(() => {
+          item.element.style.opacity = '1';
+        }, 20);
+        visibleCount++;
+      } else {
+        item.element.style.display = 'none';
+      }
+    });
+    
+    // Show/hide empty state based on search results
+    if (emptyState) {
+      if (visibleCount === 0 && originalLicenseData.length > 0) {
+        // Fade in empty state
+        emptyState.style.opacity = '0';
+        emptyState.classList.remove('d-none');
+        setTimeout(() => {
+          emptyState.style.opacity = '1';
+        }, 50);
+        
+        // Update empty state message for search
+        const emptyStateTitle = emptyState.querySelector('h5');
+        const emptyStateText = emptyState.querySelector('p');
+        if (emptyStateTitle) emptyStateTitle.textContent = 'No matching licenses';
+        if (emptyStateText) emptyStateText.textContent = 'Try a different search term';
+      } else {
+        // Fade out empty state
+        emptyState.style.opacity = '0';
+        setTimeout(() => {
+          emptyState.classList.add('d-none');
+        }, 300);
+      }
+    }
+    
+    // Update pagination if needed
+    updatePaginationForSearch(visibleCount);
+  }, 100);
+}
+
+
+
+// Function to refresh the search when new licenses are loaded
+function refreshSearch() {
+  // Clear stored data to force a refresh
+  originalLicenseData = [];
+  
+  const searchInput = document.getElementById('licenseSearchInput');
+  if (searchInput && searchInput.value.trim().length > 0) {
+    // Re-apply the current search
+    filterLicenseTable(searchInput.value.trim().toLowerCase());
+  }
+}
+// Initialize table row transition properties on page load
+document.addEventListener('DOMContentLoaded', function() {
+  initLicenseSearch();
+  
+  // Add transition properties to table rows
+  const tableBody = document.getElementById('licensesTableBody');
+  if (tableBody) {
+    const rows = tableBody.querySelectorAll('tr');
+    rows.forEach(row => {
+      row.style.transition = 'opacity 0.2s ease';
+    });
+  }
+});
+
+</script>
 {% endblock javascripts %}

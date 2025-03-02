@@ -142,6 +142,7 @@ class License(db.Model):
     expiry_date = db.Column(db.Date, nullable=True)  # Nullable if perpetual
     is_perpetual = db.Column(db.Boolean, default=False)
     purchase_date = db.Column(db.Date, nullable=True)
+    notifications = db.relationship('LicenseNotification', backref='license',cascade='all, delete-orphan', lazy=True)
     # Additional metadata fields can be added here
     
     def __init__(self,name,category_id, license_type, assigned_to, expiry_date,is_perpetual,purchase_date):
@@ -180,7 +181,8 @@ class License(db.Model):
             'expiry_date': self.expiry_date.isoformat() if self.expiry_date else None,
             'is_perpetual': self.is_perpetual,
             'purchase_date': self.purchase_date.isoformat() if self.purchase_date else None,
-            'computed_status': self.computed_status
+            'computed_status': self.computed_status,
+            'notifications': [notification.to_dict() for notification in self.notifications]
         }
 
 class EmailLog(db.Model):
@@ -206,3 +208,34 @@ class EmailLog(db.Model):
             'interval': self.interval,
             'sent_at': self.sent_at.isoformat()
         }
+
+
+class LicenseNotification(db.Model):
+    """
+    Model for license notification recipients.
+    Each license can have multiple notification recipients.
+    """
+    __tablename__ = 'license_notifications'
+    id = db.Column(db.Integer, primary_key=True)
+    license_id = db.Column(db.Integer, db.ForeignKey('license.id', ondelete='CASCADE'), nullable=False)
+    email = db.Column(db.String(100), nullable=False)
+    name = db.Column(db.String(100), nullable=True)  # Optional name for the recipient
+    is_primary = db.Column(db.Boolean, default=False)  # Whether this is a primary contact
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    
+    def __init__(self, license_id, email, name=None, is_primary=False):
+        self.license_id = license_id
+        self.email = email
+        self.name = name
+        self.is_primary = is_primary
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'license_id': self.license_id,
+            'email': self.email,
+            'name': self.name,
+            'is_primary': self.is_primary,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+

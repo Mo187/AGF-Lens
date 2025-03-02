@@ -10,6 +10,7 @@ from flask import current_app
 from flask_mail import Message
 
 from sqlalchemy.orm import joinedload
+from sqlalchemy.exc import IntegrityError
 
 import pandas as pd
 import numpy as np
@@ -40,7 +41,7 @@ from api.functions import process_ticket, get_requesters, get_ticket_volume_over
 from api.async_functions import get_company_details, get_endpoints_list, get_network_inventory_items
 
 from api.licenses import send_email_reminder
-from apps.authentication.models import License, Category
+from apps.authentication.models import License, Category, LicenseNotification
 from apps.extensions import mail
 from apps.authentication.models import Users, Department, Permission
 
@@ -984,8 +985,24 @@ def manage_licenses():
             purchase_date=purchase_date
         )
         db.session.add(new_license)
+        db.session.flush()  # Get the ID before committing
+        
+        # Add notification recipients if provided
+        notifications = data.get('notifications', [])
+        for notification_data in notifications:
+            if notification_data.get('email'):
+                notification = LicenseNotification(
+                    license_id=new_license.id,
+                    email=notification_data['email'],
+                    name=notification_data.get('name'),
+                    is_primary=notification_data.get('is_primary', False)
+                )
+                db.session.add(notification)
+        
         db.session.commit()
         return jsonify(new_license.to_dict()), 201
+    
+
 
 @blueprint.route('/ict-license/licenses/<int:license_id>', methods=['GET', 'PUT', 'DELETE'])
 @login_required
@@ -1018,9 +1035,25 @@ def single_license(license_id):
                 lic.expiry_date = None
         if 'purchase_date' in data:
             lic.purchase_date = date.fromisoformat(data['purchase_date'])
+        # Handle notification updates if provided
+        if 'notifications' in data:
+            # Clear existing notifications and add new ones
+            for notification in lic.notifications:
+                db.session.delete(notification)
+            
+            for notification_data in data['notifications']:
+                if notification_data.get('email'):
+                    notification = LicenseNotification(
+                        license_id=lic.id,
+                        email=notification_data['email'],
+                        name=notification_data.get('name'),
+                        is_primary=notification_data.get('is_primary', False)
+                    )
+                    db.session.add(notification)
+        
         db.session.commit()
         return jsonify(lic.to_dict()), 200
-
+    
     elif request.method == 'DELETE':
         db.session.delete(lic)
         db.session.commit()
@@ -1069,7 +1102,80 @@ def bulk_update_licenses():
     db.session.commit()
     return jsonify({"message": "Bulk update successful."}), 200
     
-    
+@blueprint.route('/ict-license/licenses/<int:license_id>/notifications', methods=['GET', 'POST', 'DELETE'])
+@login_required
+def license_notifications(license_id):
+    """
+    GET: Retrieve notifications for a specific license
+    POST: Add a new notification for a license
+    DELETE: Delete notifications for a license (with optional notification_id parameter)
+    """
+    # Verify the license exists
+    lic = License.query.get_or_404(license_id)
+
+    if request.method == 'GET':
+        # Return all notifications for this license
+        return jsonify([notification.to_dict() for notification in lic.notifications]), 200
+
+    elif request.method == 'POST':
+        # Add a new notification recipient
+        data = request.json
+        email = data.get('email')
+        
+        # Validate email
+        if not email or '@' not in email:
+            return jsonify({'error': 'Valid email is required'}), 400
+            
+        # Create new notification
+        notification = LicenseNotification(
+            license_id=license_id,
+            email=email,
+            name=data.get('name'),
+            is_primary=data.get('is_primary', False)
+        )
+        
+        # If this is marked as primary, reset any other primary flags for this license
+        if notification.is_primary:
+            for existing_notif in lic.notifications:
+                if existing_notif.is_primary:
+                    existing_notif.is_primary = False
+        
+        db.session.add(notification)
+        
+        try:
+            db.session.commit()
+            return jsonify(notification.to_dict()), 201
+        except IntegrityError as e:
+            db.session.rollback()
+            return jsonify({'error': f'Database error: {str(e)}'}), 400
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'error': f'Error creating notification: {str(e)}'}), 500
+
+    elif request.method == 'DELETE':
+        # Delete a specific notification or all notifications for this license
+        notification_id = request.args.get('notification_id')
+        
+        if notification_id:
+            # Delete a specific notification
+            notification = LicenseNotification.query.filter_by(
+                id=notification_id, 
+                license_id=license_id
+            ).first_or_404()
+            
+            db.session.delete(notification)
+        else:
+            # Delete all notifications for this license
+            for notification in lic.notifications:
+                db.session.delete(notification)
+        
+        try:
+            db.session.commit()
+            return jsonify({'message': 'Notification(s) deleted successfully'}), 200
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'error': f'Error deleting notification(s): {str(e)}'}), 500
+
 # Errors
 
 @login_manager.unauthorized_handler

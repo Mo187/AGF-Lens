@@ -208,8 +208,7 @@ def create_app(config):
     app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
     app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
     app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER')
-    app.config['IT_TEAM_EMAILS'] = os.getenv('IT_TEAM_EMAILS')
-    
+    app.config['IT_TEAM_EMAILS'] = os.getenv('IT_TEAM_EMAILS').split(',')   
     # Essential session configuration
     app.config['SESSION_TYPE'] = 'filesystem'  # Use filesystem for session storage
     app.config['SESSION_PERMANENT'] = True
